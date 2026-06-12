@@ -2,9 +2,43 @@
 <!-- % extends {継承するクラス} % -->
 
 <!-- base.html のタブのタイトルを上書き -->
-{% block title %} Tech News {% endblock %}
+{% block title %} Tech News ホーム{% endblock %}
 
 {% block content %}
 <h1> Tech News </h1>
-<p>sorry getting ready</p>
+
+<h2>このアプリについて</h2>
+
+<p>テックニュースを日付ごとに整理して表示するアプリ</p>
+
+<p>
+    記事データはGitHubリポジトリに保存されている
+    記事はファイル単位で保存されています
+    [更新]ボタンでGitHubから新しい記事を取得します
+</p>
+
+<p>
+    下の日付をクリックすると、その日の記事一覧が見れます。
+    各記事には、見出し・ソース。要約がついています
+    見出しをクリックすると元の記事が新しいタブで開きます。
+</p>
+
+<!--更新できているかの確認用-->
+<p>現在の記事数: {{total}}件</p>
+
+<hr>
+
+<h2>記事一覧</h2>
+
+<!-- フォームを送信して　update_feed viewでgithubへの更新を行う -->
+<form method="post" action="{% url 'news:update_feed' %}">
+
+    <!-- 秘密トークンを自動生成して、照合-->>
+    {% csrf_token  %}
+    
+    <button type="submit">更新</button>
+</form>
+
+
+
 {% endblock %}
