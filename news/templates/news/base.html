@@ -1,10 +1,11 @@
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
 
-    <!-- {% block title %}でdjangoで上書き可能であることを示す-->>
-    <!-- <title>でタブの表示する名前を設定-->>
-    <title>{% block title %} </title>
+    <!-- {% block title %}でdjangoで上書き可能であることを示す-->
+    <!-- <title>でタブの表示する名前を設定-->
+    <title>{% block title %}Tech News{% endblock %}</title>
 </head>
 <body>
 
@@ -26,7 +27,7 @@
         {% for message in messages %}
 
         <!-- <strong>で太字にして見やすいようにする -->
-        <!-- {message}で変数の値を埋め込む　Pythonのf""と同じ" -->>
+        <!-- {message}で変数の値を埋め込む　Pythonのf""と同じ" -->
         <p><strong>{{message}} </strong></p>
 
         {% endfor %}

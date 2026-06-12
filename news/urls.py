@@ -6,7 +6,7 @@ from . import views
 #わかりやすくすることができる
 app_name="news"
 
-url_patterns=[
+urlpatterns=[
 
     #最初のページ　ホームページ
     path("", views.home, name="home")
