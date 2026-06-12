@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
 
-    <!-- {% block title %}でdjangoで上書き可能であることを示す-->
-    {# {% block title %}でdjangoで上書き可能であることを示す #}
+    <!-- {# {% block title %}でdjangoで上書き可能であることを示す #} -->
     <title>{% block title %}Tech News{% endblock %}</title>
 </head>
 <body>
@@ -13,7 +12,7 @@
     <nav>
 
         <!-- hrefで飛ぶリンク先を指定する -->
-        <!-- "{% url 'news:home' %}"でdjangoで動的にリンク先を指定 -->
+        <!--{# "{% url 'news:home' %}"でdjangoで動的にリンク先を指定}-->
         <a href="{% url 'news:home' %}">Tech News</a>
 
     </nav>
