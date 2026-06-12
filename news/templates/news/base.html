@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
 
     <!-- {% block title %}でdjangoで上書き可能であることを示す-->
-    <!-- <title>でタブの表示する名前を設定-->
+    {# {% block title %}でdjangoで上書き可能であることを示す #}
     <title>{% block title %}Tech News{% endblock %}</title>
 </head>
 <body>
@@ -33,7 +33,7 @@
         {% endfor %}
     {% endif %}
 
-    <!-- ページのメインコンテンツを入れる-->>
+    <!-- ページのメインコンテンツを入れる-->
     <main>
 
         <!-- ここに毎日の記事のリンクなどで移動できるようにする -->
