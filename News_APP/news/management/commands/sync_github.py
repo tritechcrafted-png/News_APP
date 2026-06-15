@@ -131,7 +131,7 @@ class Command(BaseCommand):
             created_count +=1 
 
             #記事のタイトルをDBに書き込む
-            self.stdout.write(f" + {data.get("title", "")[:60]}")
+            self.stdout.write(f" + {data.get('title', '')[:60]}")
         
         self.stdout.write(
             self.style.SUCCESS(f"\n 完了　{created_count}件の記事を追加しました")
