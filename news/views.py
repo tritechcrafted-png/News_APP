@@ -36,12 +36,12 @@ def home(request):
         .annotate(count=Count("id"))
 
         #新しい日付が上に来るように降順で並べる
-        .order_by("-article_data")
+        .order_by("-article_date")
     )
 
     context={
         "date_list":date_list,
-        "total":Article.objetcs.count(),
+        "total":Article.objects.count(),
     }
 
     #"news/home.html":どこのテンプレートに情報の渡すかのファイルパス
