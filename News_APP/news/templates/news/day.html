@@ -1,0 +1,51 @@
+{% extends 'news/base.html' %}
+
+<!-- タブの表示を日付にして、タブの表示を上書きする-->
+{% block title %}{{ target_date|date:"Y年n月j日"}} Tech NEws {% endblock %}
+
+{% blockcontent %}
+
+<!-- ホームに戻るリンク　-->
+<p><a href="{% url 'news:home' %}">ホームに戻る</a> </p>
+
+<!--
+    {{ target_date|date:"Y年n月j日"}}の記事:viewで渡した日付を表示
+    ({{ articles|length}}件) :何件の記事なのかを表示
+-->
+<h2>{{ target_date|date:"Y年n月j日"}}の記事 ({{ articles|length}}件) </h2>
+
+
+<hr>
+
+<!-- djangoの for loop 記事を一つずつ取り出していく-->
+{% for article in articles %}
+
+    <!--
+        記事の見出しのリンクを表示
+        href:記事のもととなるリンク
+        target:どこでそのリンクを表示するのか、今回は "_blank" で新しいタブで開く
+
+        {{ aticle.title }}でリンクとして記事のタイトルを表示
+    -->
+    <a href="{{ article.url }}" target="_blank">{{ article.title }}</a>
+
+    <br>
+
+    <!-- 記事のソースを表示。　邪魔にならないように小さめの文字で-->
+    <small>{{article.source}}</small>
+
+    {% if article.description %}
+
+        <!-- 記事の要約した説明文を表示 -->>
+        <!-- 要約の100文字で区切る -->
+        <p> {{ article.description | truncatewords:100}} </p>
+
+    {% endif %}
+
+    <hr>
+
+{% empty %}
+    <p>この日の記事はありません。</p>
+{% endfor %}
+
+{% endblock %}

@@ -19,7 +19,7 @@
 
 <p>
     下の日付をクリックすると、その日の記事一覧が見れます。
-    各記事には、見出し・ソース。要約がついています
+    各記事には、見出し・ソース・要約がついています
     見出しをクリックすると元の記事が新しいタブで開きます。
 </p>
 
@@ -39,6 +39,24 @@
     <button type="submit">更新</button>
 </form>
 
+<ul>
+    <!-- 辞書のリストを確認していく -->
+    {% for item in date_list %}
 
+    <li>
+        <!-- url の中身として引数をスペースを開けて、スペース区切りで順番に渡す-->
+        <a href = "% url 'news:day' item.article_date.year item.article_date.month item.article_date.day %">
+
+            <!-- 実際のリンクとして表示する-->
+            {{item.article_date|date:"Y年n月j日"}} ({{item.count}}件)
+        </a> 
+    </li>
+
+<!-- もし、for loopのリストが空だった時には-->
+    <li>
+        記事がまだありません。[更新]ボタンを押して記事の更新を行ってください
+    </li>
+{% endfor %}
+</ul>
 
 {% endblock %}
