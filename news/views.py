@@ -61,7 +61,7 @@ def day_articles(request, year, month, day):
         raise Http404("この日付は存在しません")
     
     #指定した日付の記事のみにフィルタリングする
-    articles =  Article.objects.filter(article_data=target_date)
+    articles =  Article.objects.filter(article_date=target_date)
 
     context={
         "target_date": target_date,

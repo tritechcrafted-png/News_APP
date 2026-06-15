@@ -1,6 +1,7 @@
 import json
 import urllib.request
-import urlib.error
+import urllib.error
+
 
 #urlib.rquest: Httpリクエストを送るためのPython標準のライブラリ
 #urlib.error:接続エラーなどの例外を処理するライブラリ
@@ -27,7 +28,7 @@ def fetch_json(url):
     #json.loads(): jsonの文字列を listと辞書型に変換する
 
     with urllib.request.urlopen(url) as response:
-        return json.loads(resonse.read().decode("utf-8"))
+        return json.loads(response.read().decode("utf-8"))
     
 
 class Command(BaseCommand):
@@ -102,18 +103,18 @@ class Command(BaseCommand):
 
             #パスを "/"で分割　["articles", "2026-06-12", "0001.json"]
             #[1]＝日付フォルダの名前
-            date_str=path.split("\")[1]
+            date_str=path.split("¥/")[1]
             
             #strptime:文字列を日付に変更
             #.date()で日付だけにする
-            article_date= datetime.strptime(date_str, "%y-%m-%d").date()
+            article_date= datetime.strptime(date_str, "%Y-%m-%d").date()
 
             try:
                 #一つの記事のJSONファイルをダウンロードする
                 data = fetch_json(base_url + path)
 
             except urllib.error.URLError:
-                self.stdout.write(self.style.Warning(f"スキップ(取得失敗): {path}"))
+                self.stdout.write(self.style.WARNING(f"スキップ(取得失敗): {path}"))
 
                 #1ファイルの失敗で全体を止めずに、スキップして次に進む
                 continue
@@ -123,7 +124,7 @@ class Command(BaseCommand):
                 title=data.get("title",""),
                 url=data.get("url", ""),
                 description=data.get("description", ""),
-                source=data.get("soruce", ""),
+                source=data.get("source", ""),
                 article_date=article_date,
             )
 
@@ -131,10 +132,10 @@ class Command(BaseCommand):
             created_count +=1 
 
             #記事のタイトルをDBに書き込む
-            self.stdout.write(f" + {data.get("title", "")[:60]}")
+            self.stdout.write(f" + {data.get('title', '')[:60]}")
         
         self.stdout.write(
-            self.style.SUCCESS(f"\n 完了　{created_count}件の記事を追加しました")
+            self.style.SUCCESS(f"\n 完了{created_count}件の記事を追加しました")
         )
 
         
