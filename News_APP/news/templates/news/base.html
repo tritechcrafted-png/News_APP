@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- {# {% block title %}でdjangoで上書き可能であることを示す #} -->
+    <title>{% block title %}Tech News{% endblock %}</title>
+</head>
+<body>
+
+    <!--ページ上部のメニューを表す-->
+    <nav>
+
+        <!-- hrefで飛ぶリンク先を指定する -->
+        <!--{# "{% url 'news:home' %}"でdjangoで動的にリンク先を指定}-->
+        <a href="{% url 'news:home' %}">Tech News</a>
+
+    </nav>
+
+    <!-- 線を追加して、ページの境目を見やすくする -->
+    <hr>
+
+    <!-- もし、メッセージが存在するならTrue -->
+    {% if messages %}
+
+        {% for message in messages %}
+
+        <!-- <strong>で太字にして見やすいようにする -->
+        <!-- {message}で変数の値を埋め込む　Pythonのf""と同じ" -->
+        <p><strong>{{message}} </strong></p>
+
+        {% endfor %}
+    {% endif %}
+
+    <!-- ページのメインコンテンツを入れる-->
+    <main>
+
+        <!-- ここに毎日の記事のリンクなどで移動できるようにする -->
+        {% block content %}
+        {% endblock %}
+    
+    </main>
+
+    <hr>
+
+    <!-- footer:ページの一番下に情報を入れる場所を用意 -->
+    <footer>
+        <p> Tech News App [Ryosuke Komatsu] </p>
+
+    </footer>
+
+</body>
+</html>
