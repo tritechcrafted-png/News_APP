@@ -8,7 +8,7 @@ from django.contrib import messages
 
 from django.core.management import call_command
 
-from django.db.models impoort configuration
+from django.db.models import Count
 
 from io import StringIO
 
