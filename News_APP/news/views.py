@@ -8,7 +8,7 @@ from django.contrib import messages
 
 from django.core.management import call_command
 
-from django.db.models import configuration
+from django.db.models import Count
 
 from io import StringIO
 
@@ -77,7 +77,7 @@ def update_feed(request):
     """
     GitHubから新しい記事をDBに同期する
 
-    sync_github　を呼び出して、ホームにリダイレクトする
+    sync_github を呼び出して、ホームにリダイレクトする
     """
 
     out=StringIO()
