@@ -18,7 +18,7 @@ class ArticleAdmin(admin.ModelAdmin):
     list_filter = ("source", "article_date")
 
     #管理画面に検索バーを追加する
-    seach_fields=("title", "description")
+    search_fields=("title", "description")
 
     list_per_page=50
 
