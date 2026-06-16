@@ -20,10 +20,10 @@ urlpatterns=[
 
     path("tag/<str:name>/", views.tag_articles, name= "tag"),
 
-    #生成スタート（POSTのみ）。JSがfetchで呼ぶ。
+    #生成スタートのボタンの送信先(POSTだけ)。JSがfetchで呼ぶ
     path("generate/", views.generate_articles, name="generate_articles"),
 
-    #進捗の問い合わせ先（JSが1秒ごとにGET）
+    #進捗を聞きにくる先(JSが1秒ごとにGETする)
     path("progress/", views.generate_progress, name="generate_progress"),
 ]
 

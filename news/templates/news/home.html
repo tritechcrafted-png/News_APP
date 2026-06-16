@@ -74,76 +74,76 @@
 
 <button id="generate-btn">記事を生成（RSS＋Claude要約）</button>
 
-<!-- 進捗バー。最初は display:none で隠しておき、押したら表示する。 -->
+<!-- 進捗バー。最初は display:none で隠しておいて、ボタンを押したら表示する -->
 <div id="progress-box" style="display:none; margin-top:1em;">
 
-    <!-- 外側の灰色の枠＝100%の長さ -->
+    <!-- 外側の灰色の枠 = 100%の長さ -->
     <div style="width:300px; height:20px; border:1px solid #999; background:#eee;">
-        <!-- 内側の緑＝今の進捗。widthを％で伸ばす。 -->
+        <!-- 内側の緑 = 今の進捗。widthを％で伸ばしていく -->
         <div id="progress-fill" style="width:0%; height:100%; background:#4caf50;"></div>
     </div>
 
     <p id="progress-text">準備中...</p>
 </div>
 
-<!-- JSがCSRFトークンを読むために、隠しトークンを1つ置く -->
+<!-- JSがCSRFトークンを読むために、隠しトークンを1つ置いておく -->
 {% csrf_token %}
 
 <script>
-// 使う部品を先につかんでおく
+// 使う部品(HTMLの要素)を先につかんでおく
 const btn  = document.getElementById("generate-btn");
 const box  = document.getElementById("progress-box");
 const fill = document.getElementById("progress-fill");
 const text = document.getElementById("progress-text");
 
-// {% csrf_token %} が作った隠しinputから、トークンの値を取り出す
+// {% csrf_token %} が作った隠しinputから、トークンの中身を取り出す
 const csrftoken = document.querySelector("[name=csrfmiddlewaretoken]").value;
 
-let timer = null;   // 1秒ごとの繰り返しを止めるための入れ物
+let timer = null;   // 1秒ごとの繰り返しを止めるときに使う入れ物
 
 // --- ボタンを押したとき ---
 btn.addEventListener("click", async () => {
-    btn.disabled = true;            // 二度押し防止
-    box.style.display = "block";    // バーを表示
+    btn.disabled = true;            // 二度押しできないようにする
+    box.style.display = "block";    // 進捗バーを表示する
     text.textContent = "開始中...";
 
-    // 生成スタートをPOSTでお願いする
+    // 生成スタートのお願いを POST で送る
     const res = await fetch("{% url 'news:generate_articles' %}", {
         method: "POST",
         headers: {"X-CSRFToken": csrftoken},   // Djangoの安全チェック用
     });
     const data = await res.json();
 
-    // もう動いていた等で始められなかった場合
+    // もう動いていた等で、始められなかった場合
     if (!data.started) {
         text.textContent = data.reason || "開始できませんでした";
         btn.disabled = false;
         return;
     }
 
-    // 1秒(1000ミリ秒)ごとに進捗を取りに行く
+    // 1秒(1000ミリ秒)ごとに、進捗を取りに行く
     timer = setInterval(pollProgress, 1000);
 });
 
-// --- 1秒ごとに呼ばれる：進捗を取ってバーを描く ---
+// --- 1秒ごとに呼ばれる：進捗を取ってきてバーを描く ---
 async function pollProgress() {
     const res = await fetch("{% url 'news:generate_progress' %}");
     const job = await res.json();
 
-    // 緑のバーを percent% まで伸ばす
+    // 緑のバーを percent% の長さまで伸ばす
     fill.style.width = job.percent + "%";
     text.textContent = job.message + " (" + job.percent + "%)";
 
-    // running が false になったら終了
+    // running が false になったら終わり
     if (!job.running) {
-        clearInterval(timer);   // ポーリングを止める
+        clearInterval(timer);   // 1秒ごとの繰り返しを止める
 
         if (job.error) {
             text.textContent = "エラー: " + job.error;
             btn.disabled = false;
         } else {
             text.textContent = "完了！ページを更新します...";
-            // 新しい記事を反映するため、少し待ってリロード
+            // 新しい記事を画面に反映するために、少し待ってからリロード
             setTimeout(() => location.reload(), 1200);
         }
     }
