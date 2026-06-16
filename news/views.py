@@ -14,6 +14,7 @@ from io import StringIO
 
 from datetime import date
 
+import os
 import sys
 import threading
 import subprocess
@@ -132,6 +133,13 @@ def _run_pipeline():
     #generate_feed.py がある tech-news-data フォルダ (settings.pyで設定した)
     feed_dir = settings.FEED_SCRIPT_DIR
 
+    #Windowsだと、別プロセスのprintが日本語を cp932(Shift-JIS) で出してしまう。
+    #こちらは utf-8 で読むので、そのままだと文字化けエラー(0x82が読めない等)になる。
+    #子プロセスに「出力は utf-8 にして」と環境変数で伝えて、文字コードを揃える。
+    env = os.environ.copy()
+    env["PYTHONUTF8"] = "1"            #子のPythonをUTF-8モードにする
+    env["PYTHONIOENCODING"] = "utf-8"  #念のため、入出力もUTF-8に指定
+
     try:
         #Popen:プロセスを起動して、裏で走らせたまま出力を1行ずつ読む
         #run()だと終わるまで待ってしまうので、進捗を取るにはPopenを使う
@@ -142,7 +150,9 @@ def _run_pipeline():
             stderr=subprocess.STDOUT,      #エラー出力も同じ流れにまとめる
             text=True,
             encoding="utf-8",
+            errors="replace",             #万一読めない文字が来ても、落とさず置き換える
             bufsize=1,                     #1行ずつ読めるようにする(行バッファ)
+            env=env,                       #↑で作ったutf-8設定を子プロセスに渡す
         )
 
         #スクリプトが出す行を、出てくるそばから1行ずつ読んでいく
