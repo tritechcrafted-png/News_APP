@@ -3,7 +3,7 @@
 <!-- タブの表示を日付にして、タブの表示を上書きする-->
 {% block title %}{{ target_date|date:"Y年n月j日"}} Tech NEws {% endblock %}
 
-{% blockcontent %}
+{% block content %}
 
 <!-- ホームに戻るリンク　-->
 <p><a href="{% url 'news:home' %}">ホームに戻る</a> </p>
