@@ -56,7 +56,7 @@ def day_articles(request, year, month, day):
     try:
         #日付オブジェクト作成
         target_date=date(year, month, day)
-    except:
+    except ValueError:
         #存在しない日付の場合はエラーページを出す
         raise Http404("この日付は存在しません")
     

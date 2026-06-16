@@ -54,7 +54,7 @@
 <!-- フォームを送信して　update_feed viewでgithubへの更新を行う -->
 <form method="post" action="{% url 'news:update_feed' %}">
 
-    <!-- 秘密トークンを自動生成して、照合-->>
+    <!-- 秘密トークンを自動生成して、照合-->
     {% csrf_token  %}
     
     <button type="submit">更新</button>
