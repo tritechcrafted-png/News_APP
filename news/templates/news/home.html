@@ -34,6 +34,13 @@
     <!-- 辞書のリストを確認していく -->
     {% for item in date_list %}
 
+    <h2>トピックで探す</h2>
+    <p>
+        {% for tag in all_tags %}
+            <a href="{% url 'news:tag' tag.name %}">#{{ tag.name }}</a>
+        {% endfor %}
+    </p>
+
     <li>
         <!-- url の中身として引数をスペースを開けて、スペース区切りで順番に渡す-->
         <a href="{% url 'news:day' item.article_date.year item.article_date.month item.article_date.day %}">

@@ -17,6 +17,8 @@ urlpatterns=[
     #更新ボタンのフォームを押したときに送信するurl
     #@require_POSTでGETアクセスを拒否する
     path("update/", views.update_feed, name="update_feed"),
+
+    path("tag/<str:name>/", views.tag_articles, name= "tag"),
 ]
 
 

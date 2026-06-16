@@ -1,0 +1,25 @@
+{% extends "news/base.html" %}
+
+{% block title %}#{{ tag_name }} の記事 - Tech News{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'news:home' %}">ホームに戻る</a></p>
+
+<h2>#{{ tag_name }} の記事 ({{ articles|length }}件)</h2>
+<hr>
+
+{% for article in articles %}
+    <a href="{{ article.url }}" target="_blank">{{ article.title }}</a>
+    <br>
+    <small>{{ article.source}} ・ {{ article.article_date|date:"Y年n月j日" }}</small>
+
+    {% if <article>.description </article>%}
+        <p>{{ article.description|truncatewords:150 }}</p>
+    {% endif %}
+
+    <hr>
+{% empty %}
+    <p>このタグの記事はまだありません</p>
+{%e endfor %}
+
+{% endblock %}

@@ -14,7 +14,7 @@ from io import StringIO
 
 from datetime import date
 
-from .models import Article
+from .models import Article, Tag
 
 # Create your views here.
 
@@ -42,6 +42,7 @@ def home(request):
     context={
         "date_list":date_list,
         "total":Article.objects.count(),
+        "all_tags":Tag.objects.all(),
     }
 
     #"news/home.html":どこのテンプレートに情報の渡すかのファイルパス
@@ -70,7 +71,22 @@ def day_articles(request, year, month, day):
 
     #指定した日付の記事をテンプレートに渡す
     return render(request, "news/day.html", context)
-#(デコレーターがよくわからない)
+
+def tag_articles(request, name):
+    """
+    指定されたタグがついた記事を新しい順に表示する
+    """
+
+    #tags__name=nameでタグ名が一致するもののみを絞り込む
+    articles=Article.objects.filter(tags__name=name)
+
+    context={
+        "tag_name": name,
+        "articles":articles,
+    }
+
+    return render(request, "news/tags.html", context)
+
 @require_POST
 #デコレーターでDjangoにこの関数を渡して、Django側から呼び出せるようにする
 def update_feed(request):

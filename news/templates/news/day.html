@@ -34,6 +34,11 @@
     <!-- 記事のソースを表示。　邪魔にならないように小さめの文字で-->
     <small>{{article.source}}</small>
 
+    <!-- 記事についたタグを順番に表示していく。クリックでそのタグの一覧に移動 -->
+    {% for tag in article.tags.all %}
+        <a href="{% url 'news:tag' tag.name %}">#{{ tag.name }}</a>
+    {% endfor %}
+
     {% if article.description %}
 
         <!-- 記事の要約した説明文を表示 -->>

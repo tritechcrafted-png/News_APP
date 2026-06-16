@@ -2,6 +2,18 @@ from django.db import models
 
 # Create your models here.
 
+class Tag(models.Model):
+    """
+    同じ次ぐを複数の記事につけて行く
+    """
+
+    #nameはタグ名、 unique=Trueで AIが2回作られないようにする
+    name= models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Article(models.Model):
     """
     一つのニュース記事を示すモデル
@@ -29,6 +41,10 @@ class Article(models.Model):
     #何日に要約した記事なのかを保管
     #DateField:日時のみ保管
     article_date=models.DateField()
+
+    #ManyTo Many:多対多の関係性を指定
+    #blank= True 何もないのを許す
+    tags= models.ManyToManyField(Tag, blank=True, related_name="articles")
 
     class Meta:
         #Meta:モデルの設定の置き場所

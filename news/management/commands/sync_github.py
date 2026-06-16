@@ -1,8 +1,8 @@
 import json
 import urllib.request
 import urllib.error
-import ssl       # HTTPSの証明書検証を扱う標準ライブラリ
-import certifi   # 信頼されたルート証明書の束（CAバンドル）への入り口
+import ssl       
+import certifi   
 
 
 #urlib.rquest: Httpリクエストを送るためのPython標準のライブラリ
@@ -17,7 +17,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 
 #記事のデータベースをimportする
-from news.models import Article
+from news.models import Article, Tag
 
 def fetch_json(url):
     """
@@ -127,13 +127,24 @@ class Command(BaseCommand):
                 continue
             
             #ダウンロードした記事をDBの新しい行として保管する
-            Article.objects.create(
+            article= Article.objects.create(
                 title=data.get("title",""),
                 url=data.get("url", ""),
                 description=data.get("description", ""),
                 source=data.get("source", ""),
                 article_date=article_date,
             )
+
+            #JSONの"tags"を1ずつ処理する
+            for tag_name in data.get("tags", []):
+                #get_or_cretae:そのタグがすでにあれば習得、なければ作る
+                #return is objects
+
+                tag, _ = Tag.objects.get_or_cretae(name=tag_name)
+
+                #多対多　のつなぎを一本にする
+                article.tags.add(tag)
+
 
             #どこまでの記事を追加できたのかの数を更新
             created_count +=1 
