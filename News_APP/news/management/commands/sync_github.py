@@ -1,6 +1,8 @@
 import json
 import urllib.request
 import urllib.error
+import ssl       # HTTPSの証明書検証を扱う標準ライブラリ
+import certifi   # 信頼されたルート証明書の束（CAバンドル）への入り口
 
 #urlib.rquest: Httpリクエストを送るためのPython標準のライブラリ
 #urlib.error:接続エラーなどの例外を処理するライブラリ
@@ -26,7 +28,12 @@ def fetch_json(url):
     #.decode():受け取ったbyteを文字列に変換
     #json.loads(): jsonの文字列を listと辞書型に変換する
 
-    with urllib.request.urlopen(url) as response:
+    # ssl.create_default_context: 信頼された証明書を積んだ「検証器」を作る
+    # cafile=certifi.where(): certifi のバンドル（信頼リスト）を指定する
+    context = ssl.create_default_context(cafile=certifi.where())
+
+    # context=context: 「空の既定の検証器ではなく、コレを使え」と urlopen に伝える
+    with urllib.request.urlopen(url, context=context) as response:
         return json.loads(response.read().decode("utf-8"))
     
 
