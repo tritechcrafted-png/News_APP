@@ -118,3 +118,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 GITHUB_BASE_URL="https://raw.githubusercontent.com/tritechcrafted-png/tech-news-data/refs/heads/main/"
+
+# generate_feed.py が入っている tech-news-data フォルダ。
+# BASE_DIR は News_APP。.parent で1つ上（vault）に上がり、その隣の tech-news-data を指す。
+FEED_SCRIPT_DIR = BASE_DIR.parent / "tech-news-data"

@@ -14,6 +14,16 @@ from io import StringIO
 
 from datetime import date
 
+import sys
+import threading
+import subprocess
+
+from django.conf import settings
+
+from django.http import JsonResponse
+
+from . import progress
+
 from .models import Article, Tag
 
 # Create your views here.
@@ -107,3 +117,87 @@ def update_feed(request):
 
     #同期に成功したら、ホームに戻る
     return redirect("news:home")
+
+
+def _run_pipeline():
+    """
+    別スレッドで動く本体。Webリクエストとは別に裏で走る。
+    1. generate_feed.py を起動し、PROGRESS行を読んで進捗を更新
+    2. 終わったら sync_github でDBに取り込む
+    """
+    feed_dir = settings.FEED_SCRIPT_DIR
+
+    try:
+        # Popen = プロセスを起動して「裏で走らせたまま」出力を読む。
+        # run() と違い、終わるのを待たずに stdout を1行ずつ取れる。
+        proc = subprocess.Popen(
+            [sys.executable, "generate_feed.py"],
+            cwd=feed_dir,                  # tech-news-data の中で実行
+            stdout=subprocess.PIPE,        # 標準出力を受け取る
+            stderr=subprocess.STDOUT,      # エラー出力も同じ流れにまとめる
+            text=True,
+            encoding="utf-8",
+            bufsize=1,                     # 行バッファ：1行ごとに読める
+        )
+
+        # スクリプトが出す行を、出るそばから1行ずつ読む
+        for line in proc.stdout:
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith("PROGRESS"):
+                # 例: "PROGRESS 14 20" → ["PROGRESS","14","20"]
+                _, done_s, total_s = line.split()
+                done, total = int(done_s), int(total_s)
+
+                # ％を計算（total が0なら割り算を避けて100にする）
+                percent = int(done / total * 100) if total else 100
+
+                progress.update_job(
+                    done=done, total=total, percent=percent,
+                    message=f"要約中... {done}/{total}件",
+                )
+            else:
+                # PROGRESS以外の行は、そのまま説明文として表示する
+                progress.update_job(message=line)
+
+        # 出力を読み終えた＝プロセス終了。終了コードを確認。
+        proc.wait()
+        if proc.returncode != 0:
+            progress.update_job(running=False, error="記事の生成に失敗しました")
+            return
+
+    except Exception as e:
+        progress.update_job(running=False, error=str(e))
+        return
+
+    # ここまで来たら生成成功 → DBへ取り込む
+    progress.update_job(message="DBに取り込み中...")
+    out = StringIO()
+    call_command("sync_github", stdout=out)
+
+    # 完了。running=False にするとブラウザ側がポーリングを止める。
+    progress.update_job(running=False, percent=100, message="完了しました")
+
+
+@require_POST
+def generate_articles(request):
+    """ボタンから呼ばれる。バックグラウンドのスレッドを開始するだけして、すぐ返す。"""
+
+    # すでに動いているなら二重起動しない
+    if progress.get_job()["running"]:
+        return JsonResponse({"started": False, "reason": "すでに実行中です"})
+
+    # 進捗をリセットしてからスレッド開始
+    progress.reset_job()
+
+    # daemon=True: サーバーが落ちる時に道連れで止まる（取り残されない）
+    threading.Thread(target=_run_pipeline, daemon=True).start()
+
+    return JsonResponse({"started": True})
+
+
+def generate_progress(request):
+    """今の進捗をJSONで返すだけ。JSが1秒ごとに取りに来る。"""
+    return JsonResponse(progress.get_job())
