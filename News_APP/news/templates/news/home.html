@@ -30,25 +30,16 @@
 
 <h2>記事一覧</h2>
 
-<!-- フォームを送信して　update_feed viewでgithubへの更新を行う -->
-<form method="post" action="{% url 'news:update_feed' %}">
-
-    <!-- 秘密トークンを自動生成して、照合-->>
-    {% csrf_token  %}
-    
-    <button type="submit">更新</button>
-</form>
-
 <ul>
     <!-- 辞書のリストを確認していく -->
     {% for item in date_list %}
 
     <li>
         <!-- url の中身として引数をスペースを開けて、スペース区切りで順番に渡す-->
-        <a href = "% url 'news:day' item.article_date.year item.article_date.month item.article_date.day %">
+        <a href="{% url 'news:day' item.article_date.year item.article_date.month item.article_date.day %}">
 
             <!-- 実際のリンクとして表示する-->
-            {{item.article_date|date:"Y年n月j日"}} ({{item.count}}件)
+            {{ item.article_date|date:"Y年n月j日" }} ({{ item.count }}件)
         </a> 
     </li>
 
@@ -59,5 +50,14 @@
         </li>
     {% endfor %}
 </ul>
+
+<!-- フォームを送信して　update_feed viewでgithubへの更新を行う -->
+<form method="post" action="{% url 'news:update_feed' %}">
+
+    <!-- 秘密トークンを自動生成して、照合-->>
+    {% csrf_token  %}
+    
+    <button type="submit">更新</button>
+</form>
 
 {% endblock %}
