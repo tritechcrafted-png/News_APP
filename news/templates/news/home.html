@@ -7,7 +7,7 @@
 {% block content %}
 <h1> Tech News </h1>
 
-<h2>このアプリについて</h2>
+<h2>このアプリの使い方</h2>
 
 <p>テックニュースを日付ごとに整理して表示するアプリ</p>
 
@@ -18,13 +18,9 @@
 </p>
 
 <p>
-    下の日付をクリックすると、その日の記事一覧が見れます。
-    各記事には、見出し・ソース・要約がついています
-    見出しをクリックすると元の記事が新しいタブで開きます。
+    下の日付をクリックすると、その日の記事一覧が表示されます<br>
+    各記事には、見出し・ソース・要約で構成されています<br>
 </p>
-
-<!--更新できているかの確認用-->
-<p>現在の記事数: {{total}}件</p>
 
 <hr>
 
@@ -33,8 +29,6 @@
 <ul>
     <!-- 辞書のリストを確認していく -->
     {% for item in date_list %}
-
-    <h2>トピックで探す</h2>
     <p>
         {% for tag in all_tags %}
             <a href="{% url 'news:tag' tag.name %}">#{{ tag.name }}</a>
@@ -103,14 +97,17 @@ let timer = null;   // 1秒ごとの繰り返しを止めるときに使う入�
 
 // --- ボタンを押したとき ---
 btn.addEventListener("click", async () => {
-    btn.disabled = true;            // 二度押しできないようにする
-    box.style.display = "block";    // 進捗バーを表示する
+    // 二度押しできないようにする
+    btn.disabled = true;      
+
+    // 進捗バーを表示する
+    box.style.display = "block";    
     text.textContent = "開始中...";
 
     // 生成スタートのお願いを POST で送る
     const res = await fetch("{% url 'news:generate_articles' %}", {
         method: "POST",
-        headers: {"X-CSRFToken": csrftoken},   // Djangoの安全チェック用
+        headers: {"X-CSRFToken": csrftoken},   
     });
     const data = await res.json();
 

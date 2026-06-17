@@ -170,7 +170,22 @@ def _run_pipeline():
                 done, total = int(done_s), int(total_s)
 
                 #パーセントを計算する。totalが0の時は割り算できないので100にする
-                percent = int(done / total * 100) if total else 100
+                if total:
+                    percent = int(done / total * 100)
+                else:
+                    #generate_feed.py が出す節目のメッセージを加えて少しずつ進めていく
+                    
+                    #ローカル保存が完了下
+                    if "保存しました" in line:
+                        progress.update_job(percent=88, messgae=line)
+                    
+                    #Githubに要約した記事をpush
+                    elif line.startswith("GitHub"):
+                        progress.update_job(percent=90, message=line)
+                    
+                    #pushが完了した場合
+                    elif line.startswith("完了"):
+                        progress.update_job(percent=95, message=line)
 
                 progress.update_job(
                     done=done, total=total, percent=percent,
@@ -194,8 +209,15 @@ def _run_pipeline():
 
     #ここまで来たら生成成功。次にDBへ取り込む
     progress.update_job(message="DBに取り込み中...")
-    out = StringIO()
-    call_command("sync_github", stdout=out)
+
+    #データベースに記事を取り組む
+    try:
+        out = StringIO()
+        call_command("sync_github", stdout=out)
+    except Exception as e:
+        progress.update_job(running=False, error=f"DB取り込みで失敗: {e}")
+        return
+
 
     #完了。running=Falseにすると、画面側がポーリング(1秒ごとの確認)をやめる
     progress.update_job(running=False, percent=100, message="完了しました")
