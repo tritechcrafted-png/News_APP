@@ -8,18 +8,6 @@
 </head>
 <body>
 
-    <!--ページ上部のメニューを表す-->
-    <nav>
-
-        <!-- hrefで飛ぶリンク先を指定する -->
-        <!--{# "{% url 'news:home' %}"でdjangoで動的にリンク先を指定 #}-->
-        <a href="{% url 'news:home' %}">Tech News</a>
-
-    </nav>
-
-    <!-- 線を追加して、ページの境目を見やすくする -->
-    <hr>
-
     <!-- もし、メッセージが存在するならTrue -->
     {% if messages %}
 
