@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import sys
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -123,3 +125,15 @@ GITHUB_BASE_URL="https://raw.githubusercontent.com/tritechcrafted-png/tech-news-
 #BASE_DIR は News_APP。.parent で1つ上(vault)に上がって、隣の tech-news-data を指す
 #フルパスを直書きしないので、PCが変わっても動く
 FEED_SCRIPT_DIR = BASE_DIR.parent / "tech-news-data"
+
+#generate_feed.py を動かすときに使う Python。
+#この Django と同じ仮想環境(.venv)の python を明示的に指定する。
+#理由: generate_feed.py は feedparser を import する。サーバーを起動した
+#Python が feedparser を持っていないと、裏で動かしたスクリプトが
+#「No module named 'feedparser'」で落ち、「記事の生成に失敗しました」になる。
+#.venv の python なら feedparser が確実に入っているので、ここを固定して防ぐ。
+FEED_PYTHON = BASE_DIR / ".venv" / "Scripts" / "python.exe"
+
+#もし .venv が見つからなければ、今このDjangoを動かしている python を使う(保険)
+if not FEED_PYTHON.exists():
+    FEED_PYTHON = Path(sys.executable)

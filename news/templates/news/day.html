@@ -8,13 +8,17 @@
 <!-- ホームに戻るリンク　-->
 <p><a href="{% url 'news:home' %}">ホームに戻る</a></p>
 
-<!-- ジャンルで絞り込む。選んだら、そのタグのページへ飛ぶ（動きはページ下の script で） -->
+<!-- ジャンルで絞り込む。選んだら「この日の」記事だけをそのジャンルで絞り込む。 -->
+<!-- ↓この日に出てくるタグだけを並べる。?genre=○○ を付けて同じ日付ページに戻る。 -->
 <p>
     <label for="genre-filter">ジャンルで絞り込む：</label>
     <select id="genre-filter">
-        <option value="">-- 選んでください --</option>
-        {% for tag in all_tags %}
-            <option value="{% url 'news:tag' tag.name %}">{{ tag.name }}</option>
+        <!-- 何も絞らない状態。クエリ無しの日付ページに戻る -->
+        <option value="{% url 'news:day' target_date.year target_date.month target_date.day %}">-- すべて表示 --</option>
+        {% for tag in day_tags %}
+            <!-- 同じ日付ページのURL + ?genre=タグ名。selected_genre と同じなら選択状態にする -->
+            <option value="{% url 'news:day' target_date.year target_date.month target_date.day %}?genre={{ tag.name|urlencode }}"
+                    {% if tag.name == selected_genre %}selected{% endif %}>{{ tag.name }}</option>
         {% endfor %}
     </select>
 </p>
@@ -67,10 +71,10 @@
     // ドロップダウンの要素を取ってくる
     const genreFilter = document.getElementById("genre-filter");
 
-    // 選択が変わったら、その値(タグページのURL)へ移動する
+    // 選択が変わったら、その値(絞り込み後の日付ページURL)へ移動する
     genreFilter.addEventListener("change", function () {
 
-        // 値が空(「-- 選んでください --」)のときは何もしない
+        // 値が空のときは何もしない（基本的に空にはならないが念のため）
         if (this.value) {
             window.location = this.value;
         }

@@ -75,10 +75,31 @@ def day_articles(request, year, month, day):
     #指定した日付の記事のみにフィルタリングする
     articles =  Article.objects.filter(article_date=target_date)
 
+    #ジャンル(タグ)が選ばれていたら、その日の記事の「中だけ」でさらに絞り込む。
+    #?genre=AI のように、URLのクエリから選ばれたジャンルを受け取る。
+    #無ければ空文字 "" になる。
+    selected_genre = request.GET.get("genre", "")
+
+    #ジャンルが選ばれているときだけ、上の「その日の記事」にさらに条件を足す。
+    #articles はすでに article_date=target_date で絞ってあるので、
+    #ここで tags を足しても、他の日のフォルダの記事は混ざらない。
+    if selected_genre:
+        articles = articles.filter(tags__name=selected_genre)
+
+    #ドロップダウンには、その日の記事に実際についているタグだけを出す。
+    #全タグを出すと、その日に1件も無いジャンルを選んで空っぽになってしまうため。
+    #distinct() で、同じタグ名が何度も出るのを1つにまとめる。
+    day_tags = (
+        Tag.objects
+        .filter(articles__article_date=target_date)
+        .distinct()
+    )
+
     context={
         "target_date": target_date,
         "articles": articles,
-        "all_tags": Tag.objects.all(),
+        "day_tags": day_tags,
+        "selected_genre": selected_genre,
     }
 
     #指定した日付の記事をテンプレートに渡す
@@ -175,7 +196,10 @@ def _run_pipeline(count):
         #Popen:プロセスを起動して、裏で走らせたまま出力を1行ずつ読む
         #run()だと終わるまで待ってしまうので、進捗を取るにはPopenを使う
         #実行するコマンドを先に組み立てる。
-        cmd = [sys.executable, "generate_feed.py"]
+        #sys.executable(サーバーを起動したPython)ではなく、settings.FEED_PYTHON を使う。
+        #FEED_PYTHON は feedparser が入っている .venv の python なので、
+        #どのPythonでサーバーを起動しても、generate_feed.py が確実に動く。
+        cmd = [str(settings.FEED_PYTHON), "generate_feed.py"]
 
         #count が 1以上のときだけ、件数を引数として足す。
         #0(=全部)のときは足さない → generate_feed.py 側は「制限なし」で動く。
