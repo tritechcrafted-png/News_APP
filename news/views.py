@@ -96,22 +96,30 @@ def tag_articles(request, name):
         "articles":articles,
     }
 
-    return render(request, "news/tags.html", context)
+    return render(request, "news/tag.html", context)
+
+def _run_sync():
+    """
+    更新ボタン用：GitHub空の同期のみ裏で行う
+    """
+    try:
+        out=StringIO()
+        call_command("sync_github",stdout=out)
+    except Exception:
+        #裏の処理なので、失敗してもサーバーは落とさない
+        pass
 
 @require_POST
 #デコレーターでDjangoにこの関数を渡して、Django側から呼び出せるようにする
 def update_feed(request):
     """
     GitHubから新しい記事をDBに同期する
-
-    sync_github　を呼び出して、ホームにリダイレクトする
     """
 
     out=StringIO()
     
-    #sync_githubコマンドを実行する
-    #standout=outで (よくわからない)
-    call_command("sync_github", stdout=out)
+    #同期の処理を裏で行う
+    threading.Thread(target=_run_sync, daemon=True).start()
 
     #同期に成功したらメッセージを表示
     messages.success(request, "GitHubから記事を同期しました。")
@@ -282,7 +290,7 @@ def generate_articles(request):
     progress.reset_job()
 
     #daemon=True:サーバーが止まる時に一緒に止まる(取り残されないように)
-    threading.Thread(target=_run_pipeline, daemon=True).start()
+    threading.Thread(target=_run_pipeline, args=(count,),daemon=True).start()
 
     return JsonResponse({"started": True})
 

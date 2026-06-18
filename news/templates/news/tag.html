@@ -13,8 +13,8 @@
     <br>
     <small>{{ article.source}} ・ {{ article.article_date|date:"Y年n月j日" }}</small>
 
-    {% if <article>.description </article>%}
-        <p>{{ article.description|truncatewords:150 }}</p>
+    {% if article.description%}
+        <p>{{ article.description|truncatewords:400 }}</p>
     {% endif %}
 
     <hr>

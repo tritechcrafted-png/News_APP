@@ -30,9 +30,18 @@
     <!-- 辞書のリストを確認していく -->
     {% for item in date_list %}
     <p>
-        {% for tag in all_tags %}
+        <h2>ジャンルで絞り込む</h2>
+        <p>興味あるジャンルで、記事を絞り込めます</p>
+
+        <label for="genere-filter">ジャンル:</label>
+        <select id="genere-filter" onchange="if (this.value) {window.location=this.value;}">
+            <option value="">-- 選んでください --</option> 
+
             <a href="{% url 'news:tag' tag.name %}">#{{ tag.name }}</a>
+        {% for tag in all_tags %}
+            <option value = "{% url 'news:tag' tag.name %}">{{ tag.name }} </option>
         {% endfor %}
+    </select>
     </p>
 
     <li>
