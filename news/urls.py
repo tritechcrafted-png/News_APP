@@ -18,6 +18,9 @@ urlpatterns=[
     #@require_POSTでGETアクセスを拒否する
     path("update/", views.update_feed, name="update_feed"),
 
+    #全記事削除ボタンの送信先(POSTだけ)
+    path("clear/", views.clear_articles, name="clear_articles"),
+
     path("tag/<str:name>/", views.tag_articles, name= "tag"),
 
     #生成スタートのボタンの送信先(POSTだけ)。JSがfetchで呼ぶ

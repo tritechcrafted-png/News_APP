@@ -29,10 +29,16 @@ class Article(models.Model):
 
     #記事の説明文を保管
     #CLaudeなどで要約した記事がここに入る
-    
+    #description は「見出しの下に出す短いリード文」として使う
+
     #TextField: 文字数制限なしの長いテキストを用意
     #blank=True: 空でも保存できる
     description= models.TextField(blank=True)
+
+    #やさしい言葉でのくわしい説明文(1〜2段落)を保管
+    #description が短いリード文、detail がその下に出す本文
+    #古い記事には detail が無いこともあるので blank=True で空も許す
+    detail = models.TextField(blank=True)
 
     #どこからその記事をとってきたのか
     #そのソース

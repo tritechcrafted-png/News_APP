@@ -130,7 +130,10 @@ class Command(BaseCommand):
             article= Article.objects.create(
                 title=data.get("title",""),
                 url=data.get("url", ""),
+                #description = 見出しの下に出す短いリード文
                 description=data.get("description", ""),
+                #detail = やさしい言葉でのくわしい説明。古い記事には無いので空をデフォルトにする
+                detail=data.get("detail", ""),
                 source=data.get("source", ""),
                 article_date=article_date,
             )
@@ -140,7 +143,7 @@ class Command(BaseCommand):
                 #get_or_cretae:そのタグがすでにあれば習得、なければ作る
                 #return is objects
 
-                tag, _ = Tag.objects.get_or_cretae(name=tag_name)
+                tag, _ = Tag.objects.get_or_create(name=tag_name)
 
                 #多対多　のつなぎを一本にする
                 article.tags.add(tag)

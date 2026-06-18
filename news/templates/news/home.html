@@ -12,14 +12,13 @@
 <p>テックニュースを日付ごとに整理して表示するアプリ</p>
 
 <p>
-    記事データはGitHubリポジトリに保存されている
-    記事はファイル単位で保存されています
+    記事データはGitHubリポジトリにファイル単位で保存されています<br>
     [更新]ボタンでGitHubから新しい記事を取得します
 </p>
 
 <p>
     下の日付をクリックすると、その日の記事一覧が表示されます<br>
-    各記事には、見出し・ソース・要約で構成されています<br>
+    各記事には、見出し・ソース・要約が表示されます<br>
 </p>
 
 <hr>
@@ -27,44 +26,48 @@
 <h2>記事一覧</h2>
 
 <ul>
-    <!-- 辞書のリストを確認していく -->
+    <!-- 日付ごとのリストを出していく（タグは出さない） -->
     {% for item in date_list %}
-    <p>
-        {% for tag in all_tags %}
-            <a href="{% url 'news:tag' tag.name %}">#{{ tag.name }}</a>
-        {% endfor %}
-    </p>
-
     <li>
-        <!-- url の中身として引数をスペースを開けて、スペース区切りで順番に渡す-->
+        <!-- url の中身として引数をスペース区切りで順番に渡す -->
         <a href="{% url 'news:day' item.article_date.year item.article_date.month item.article_date.day %}">
-
-            <!-- 実際のリンクとして表示する-->
             {{ item.article_date|date:"Y年n月j日" }} ({{ item.count }}件)
-        </a> 
+        </a>
     </li>
 
-    <!-- もし、for loopのリストが空だった時には-->
+    <!-- for loop のリストが空だったとき -->
     {% empty %}
-        <li>
-            記事がまだありません。[更新]ボタンを押して記事の更新を行ってください
-        </li>
+        <li>記事がまだありません。[更新]ボタンを押して記事の更新を行ってください</li>
     {% endfor %}
 </ul>
 
-<!-- フォームを送信して　update_feed viewでgithubへの更新を行う -->
+<!-- GitHubから同期する（更新ボタン） -->
 <form method="post" action="{% url 'news:update_feed' %}">
-
-    <!-- 秘密トークンを自動生成して、照合-->
-    {% csrf_token  %}
-    
+    {% csrf_token %}
     <button type="submit">更新</button>
+</form>
+
+<!-- デモ用: DBの記事を全部消す。GitHubのデータは消えない -->
+<form method="post"
+      action="{% url 'news:clear_articles' %}"
+      onsubmit="return confirm('本当にDBの記事を全部消しますか？（GitHubのデータは消えません）');">
+    {% csrf_token %}
+    <button type="submit">DBの記事を全部削除（デモ用）</button>
 </form>
 
 <hr>
 
 <h2>新しい記事を取りに行く</h2>
-<p>RSS取得 → Claude要約＋タグ付け → GitHub保存 → DB取り込み を一気に実行します。数分かかります。</p>
+<p>RSS取得 → Claude要約＋タグ付け → GitHub保存 → DB取り込み を一気に実行します。</p>
+
+<!-- 取得する記事数を選ぶ。デモは「1件」で速い -->
+<label for="count-select">取得する記事数：</label>
+<select id="count-select">
+    <option value="1">1件（デモ用・速い）</option>
+    <option value="5">5件</option>
+    <option value="10">10件</option>
+    <option value="0">全部</option>
+</select>
 
 <button id="generate-btn">記事を生成（RSS＋Claude要約）</button>
 
@@ -89,6 +92,7 @@ const btn  = document.getElementById("generate-btn");
 const box  = document.getElementById("progress-box");
 const fill = document.getElementById("progress-fill");
 const text = document.getElementById("progress-text");
+const sel  = document.getElementById("count-select");
 
 // {% csrf_token %} が作った隠しinputから、トークンの中身を取り出す
 const csrftoken = document.querySelector("[name=csrfmiddlewaretoken]").value;
@@ -98,16 +102,24 @@ let timer = null;   // 1秒ごとの繰り返しを止めるときに使う入�
 // --- ボタンを押したとき ---
 btn.addEventListener("click", async () => {
     // 二度押しできないようにする
-    btn.disabled = true;      
+    btn.disabled = true;
 
     // 進捗バーを表示する
-    box.style.display = "block";    
+    box.style.display = "block";
     text.textContent = "開始中...";
 
-    // 生成スタートのお願いを POST で送る
+    // ドロップダウンで選ばれている件数を読む
+    const count = sel.value;
+
+    // フォーム形式の本文を作って、count を入れる
+    const body = new URLSearchParams();
+    body.append("count", count);
+
+    // 生成スタートのお願いを POST で送る（本文に件数を入れる）
     const res = await fetch("{% url 'news:generate_articles' %}", {
         method: "POST",
-        headers: {"X-CSRFToken": csrftoken},   
+        headers: {"X-CSRFToken": csrftoken},
+        body: body,
     });
     const data = await res.json();
 

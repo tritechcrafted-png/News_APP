@@ -78,6 +78,7 @@ def day_articles(request, year, month, day):
     context={
         "target_date": target_date,
         "articles": articles,
+        "all_tags": Tag.objects.all(),
     }
 
     #指定した日付の記事をテンプレートに渡す
@@ -96,31 +97,61 @@ def tag_articles(request, name):
         "articles":articles,
     }
 
-    return render(request, "news/tags.html", context)
+    return render(request, "news/tag.html", context)
+
+
+def _run_sync():
+    """
+    更新ボタン用: GitHubからの同期だけを裏のスレッドで走らせる。
+
+    同期は20秒ほどかかるので、Webリクエストの中で待つと、ブラウザが先に
+    あきらめて接続を切る → Djangoが返事を書こうとして Broken pipe になる。
+    なので裏のスレッドで走らせて、リクエストはすぐ返す。
+    """
+    try:
+        out = StringIO()
+        call_command("sync_github", stdout=out)
+    except Exception:
+        #裏のスレッドなので、失敗してもサーバー全体は落とさない
+        pass
+
 
 @require_POST
 #デコレーターでDjangoにこの関数を渡して、Django側から呼び出せるようにする
 def update_feed(request):
     """
-    GitHubから新しい記事をDBに同期する
-
-    sync_github　を呼び出して、ホームにリダイレクトする
+    GitHubから新しい記事をDBに同期する(裏で実行)。
+    すぐにホームへ戻す。記事は数秒後に増える。
     """
 
-    out=StringIO()
-    
-    #sync_githubコマンドを実行する
-    #standout=outで (よくわからない)
-    call_command("sync_github", stdout=out)
+    #同期を裏のスレッドで始める。リクエストはすぐ返るので Broken pipe にならない
+    threading.Thread(target=_run_sync, daemon=True).start()
 
-    #同期に成功したらメッセージを表示
-    messages.success(request, "GitHubから記事を同期しました。")
+    messages.success(request, "GitHubから同期を開始しました。数秒後にページを再読み込みしてください。")
 
-    #同期に成功したら、ホームに戻る
+    #すぐにホームに戻る
     return redirect("news:home")
 
 
-def _run_pipeline():
+@require_POST
+def clear_articles(request):
+    """
+    DBの記事を全部消す。デモで「更新」が空から取り込むのを見せるため。
+    消すのは DjangoのDB だけ。GitHub側のデータは消さない。
+    """
+
+    #記事を全部削除する
+    Article.objects.all().delete()
+
+    #タグも全部削除して、まっさらにする
+    Tag.objects.all().delete()
+
+    messages.success(request, "DBの記事を全部削除しました。")
+
+    return redirect("news:home")
+
+
+def _run_pipeline(count):
     """
     別のスレッドで動く本体の部分
     画面の動き(リクエスト)とは別に、裏でずっと走らせておくためのもの
@@ -143,8 +174,16 @@ def _run_pipeline():
     try:
         #Popen:プロセスを起動して、裏で走らせたまま出力を1行ずつ読む
         #run()だと終わるまで待ってしまうので、進捗を取るにはPopenを使う
+        #実行するコマンドを先に組み立てる。
+        cmd = [sys.executable, "generate_feed.py"]
+
+        #count が 1以上のときだけ、件数を引数として足す。
+        #0(=全部)のときは足さない → generate_feed.py 側は「制限なし」で動く。
+        if count >= 1:
+            cmd.append(str(count))
+
         proc = subprocess.Popen(
-            [sys.executable, "generate_feed.py"],
+            cmd,
             cwd=feed_dir,                  #tech-news-data の中で実行する
             stdout=subprocess.PIPE,        #標準出力を受け取る
             stderr=subprocess.STDOUT,      #エラー出力も同じ流れにまとめる
@@ -169,30 +208,34 @@ def _run_pipeline():
                 _, done_s, total_s = line.split()
                 done, total = int(done_s), int(total_s)
 
-                #パーセントを計算する。totalが0の時は割り算できないので100にする
+                #パーセントを計算する。totalが0(新着なし)の時は割り算できないので0にする
                 if total:
                     percent = int(done / total * 100)
                 else:
-                    #generate_feed.py が出す節目のメッセージを加えて少しずつ進めていく
-                    
-                    #ローカル保存が完了下
-                    if "保存しました" in line:
-                        progress.update_job(percent=88, messgae=line)
-                    
-                    #Githubに要約した記事をpush
-                    elif line.startswith("GitHub"):
-                        progress.update_job(percent=90, message=line)
-                    
-                    #pushが完了した場合
-                    elif line.startswith("完了"):
-                        progress.update_job(percent=95, message=line)
+                    percent = 0
 
                 progress.update_job(
                     done=done, total=total, percent=percent,
                     message=f"要約中... {done}/{total}件",
                 )
+
+            #ここから下は generate_feed.py が出す節目のメッセージ。
+            #PROGRESS行ではないので、それぞれ別の elif として拾う。
+
+            #ローカル保存が完了
+            elif "保存しました" in line:
+                progress.update_job(percent=88, message=line)
+
+            #Githubに要約した記事をpush
+            elif line.startswith("GitHub"):
+                progress.update_job(percent=90, message=line)
+
+            #pushが完了した場合
+            elif line.startswith("完了"):
+                progress.update_job(percent=95, message=line)
+
             else:
-                #PROGRESS以外の行は、そのまま説明文として画面に出す
+                #それ以外の行は、そのまま説明文として画面に出す
                 progress.update_job(message=line)
 
         #出力を読み終わった = プロセスが終わった、ということ
@@ -235,11 +278,24 @@ def generate_articles(request):
     if progress.get_job()["running"]:
         return JsonResponse({"started": False, "reason": "すでに実行中です"})
 
+    #画面のドロップダウンから「何件取得するか」を受け取る。
+    #送られてこない／数字でないときは、安全側として 1 件にする。
+    count_raw = request.POST.get("count", "1")
+    try:
+        count = int(count_raw)
+    except ValueError:
+        count = 1
+
+    #マイナスが来たら 1 にする。0 は「全部」の意味なのでそのまま通す。
+    if count < 0:
+        count = 1
+
     #進捗を0に戻してからスレッドを開始する
     progress.reset_job()
 
     #daemon=True:サーバーが止まる時に一緒に止まる(取り残されないように)
-    threading.Thread(target=_run_pipeline, daemon=True).start()
+    #args=(count,) でスレッドに件数を渡す。カンマを忘れない(1要素のタプル)。
+    threading.Thread(target=_run_pipeline, args=(count,), daemon=True).start()
 
     return JsonResponse({"started": True})
 
