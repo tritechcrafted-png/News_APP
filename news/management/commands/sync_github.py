@@ -140,7 +140,7 @@ class Command(BaseCommand):
                 #get_or_cretae:そのタグがすでにあれば習得、なければ作る
                 #return is objects
 
-                tag, _ = Tag.objects.get_or_cretae(name=tag_name)
+                tag, _ = Tag.objects.get_or_create(name=tag_name)
 
                 #多対多　のつなぎを一本にする
                 article.tags.add(tag)

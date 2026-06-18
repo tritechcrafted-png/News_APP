@@ -171,29 +171,32 @@ def _run_pipeline():
 
                 #パーセントを計算する。totalが0の時は割り算できないので100にする
                 if total:
-                    percent = int(done / total * 100)
-                else:
-                    #generate_feed.py が出す節目のメッセージを加えて少しずつ進めていく
-                    
-                    #ローカル保存が完了下
-                    if "保存しました" in line:
-                        progress.update_job(percent=88, messgae=line)
-                    
-                    #Githubに要約した記事をpush
-                    elif line.startswith("GitHub"):
-                        progress.update_job(percent=90, message=line)
-                    
-                    #pushが完了した場合
-                    elif line.startswith("完了"):
-                        progress.update_job(percent=95, message=line)
+                    percent = int(done / total * 85)
 
+                else:
+                    percent=85
+                
                 progress.update_job(
-                    done=done, total=total, percent=percent,
-                    message=f"要約中... {done}/{total}件",
-                )
+                    done=done, total=total, percent=percent, 
+                    message=f"要約中.... {done}/{total}件")
             else:
-                #PROGRESS以外の行は、そのまま説明文として画面に出す
-                progress.update_job(message=line)
+                #generate_feed.py が出す節目のメッセージを加えて少しずつ進めていく
+                
+                #ローカル保存が完了下
+                if "保存しました" in line:
+                    progress.update_job(percent=88, message=line)
+                
+                #Githubに要約した記事をpush
+                elif line.startswith("GitHub"):
+                    progress.update_job(percent=90, message=line)
+                
+                #pushが完了した場合
+                elif line.startswith("完了"):
+                    progress.update_job(percent=95, message=line)
+
+                #それ以外の文の場合はそのまま表示させる
+                else:
+                    progress.update_job(message=line)
 
         #出力を読み終わった = プロセスが終わった、ということ
         #終了コードを確認して、0以外なら失敗
