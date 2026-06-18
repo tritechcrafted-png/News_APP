@@ -25,6 +25,9 @@ urlpatterns=[
 
     #進捗を聞きにくる先(JSが1秒ごとにGETする)
     path("progress/", views.generate_progress, name="generate_progress"),
+
+    #全記事削除ボタンの送信先
+    path("clear/", views.clear_articles, name="clear_articles"),
 ]
 
 

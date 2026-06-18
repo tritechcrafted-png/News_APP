@@ -61,10 +61,29 @@
     <button type="submit">更新</button>
 </form>
 
+<!-- デモ用：DBの記事を全部消す。GitHubのデータは消えない -->
+<form method="post"
+    action="{% url 'news:clear_articles' %}"
+    onsubmit="return confirm('本当にDBの記事をほんとに消しますか？ (GitHubのデータは消えません)')";>
+
+    {% csrf_token %}
+
+    <button type = "submit">DBの記事を全部削除</button>
+</form>
+
 <hr>
 
 <h2>新しい記事を取りに行く</h2>
 <p>RSS取得 → Claude要約＋タグ付け → GitHub保存 → DB取り込み を一気に実行します。数分かかります。</p>
+
+<label for="count-select">取得する記事数:</label>
+<select id="count-select">
+    <option value="1">1件</option>
+    <option value="5">5件</option>
+    <option value="10">10件</option>
+    <option value="0">最大限の記事を生成</option>
+</select>
+
 
 <button id="generate-btn">記事を生成（RSS＋Claude要約）</button>
 
@@ -89,6 +108,7 @@ const btn  = document.getElementById("generate-btn");
 const box  = document.getElementById("progress-box");
 const fill = document.getElementById("progress-fill");
 const text = document.getElementById("progress-text");
+const sel = document.getElementById("count-select");
 
 // {% csrf_token %} が作った隠しinputから、トークンの中身を取り出す
 const csrftoken = document.querySelector("[name=csrfmiddlewaretoken]").value;
@@ -104,10 +124,18 @@ btn.addEventListener("click", async () => {
     box.style.display = "block";    
     text.textContent = "開始中...";
 
+    //ドロップダウンで選ばれた件数を読む
+    const count=sel.value;
+
+    //フォーム形式の本文を作って、生成する記事の件数を得る
+    const body = new URLSearchParams();
+    body.append("count", count)
+
     // 生成スタートのお願いを POST で送る
     const res = await fetch("{% url 'news:generate_articles' %}", {
         method: "POST",
-        headers: {"X-CSRFToken": csrftoken},   
+        headers: {"X-CSRFToken": csrftoken},
+        body: body,   
     });
     const data = await res.json();
 

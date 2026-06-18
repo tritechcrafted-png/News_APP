@@ -119,8 +119,26 @@ def update_feed(request):
     #同期に成功したら、ホームに戻る
     return redirect("news:home")
 
+@require_POST
+def clear_articles(request):
+    """
+    DBの記事を全部消す。
+    DjangoのDBのみ削除する
+    """
 
-def _run_pipeline():
+    #記事をすべてDBから消す
+    Article.objects.all().delete()
+
+    #タグも全部消して、まっさらにする
+    Tag.objects.all().delete()
+
+    #画面に完了のメッセージ
+    messages.success(request, "DBの記事を全部削除しました")
+
+    #ホームに戻る
+    return redirect("news:home")
+
+def _run_pipeline(count ):
     """
     別のスレッドで動く本体の部分
     画面の動き(リクエスト)とは別に、裏でずっと走らせておくためのもの
@@ -141,6 +159,14 @@ def _run_pipeline():
     env["PYTHONIOENCODING"] = "utf-8"  #念のため、入出力もUTF-8に指定
 
     try:
+        #実行するコードを先に設定する
+        cmd=[sys.executable, "generate_feed.py"]
+
+        #count が1以上の時だけ、件数を引数として足す。
+        #(0=全部)の時は足さない -> generate_feed.py側は[制限なし]で動く
+        if count>=1:
+            cmd.append(str(count))
+
         #Popen:プロセスを起動して、裏で走らせたまま出力を1行ずつ読む
         #run()だと終わるまで待ってしまうので、進捗を取るにはPopenを使う
         proc = subprocess.Popen(
@@ -237,6 +263,20 @@ def generate_articles(request):
     #もうすでに動いているなら、二重で始めない
     if progress.get_job()["running"]:
         return JsonResponse({"started": False, "reason": "すでに実行中です"})
+    
+    #画面のドロップダウンとして何件受け取るかを習得する
+    #送られてこない・数字出ない時は、安全側として1件にする
+    count_raw = request.POST.get("count","1")
+
+    try:
+        count=int(count_raw)
+    except ValueError:
+        count=1
+    
+    #もしマイナスなら最低でも1にする
+    #0は全部という意味なのでスルー
+    if count<0:
+        count=1
 
     #進捗を0に戻してからスレッドを開始する
     progress.reset_job()
