@@ -218,6 +218,11 @@ def _run_pipeline(count):
             env=env,                       #↑で作ったutf-8設定を子プロセスに渡す
         )
 
+        #失敗したときに「本当の原因」を画面に出すために、直近の出力を覚えておく。
+        #stderr も stdout にまとめてあるので、Pythonのエラー(トレースバック)もここに入る。
+        #最後の数行だけあれば原因が分かるので、15行だけ残す。
+        recent_lines = []
+
         #スクリプトが出す行を、出てくるそばから1行ずつ読んでいく
         for line in proc.stdout:
             line = line.strip()
@@ -225,6 +230,10 @@ def _run_pipeline(count):
             #空っぽの行は飛ばす
             if not line:
                 continue
+
+            #原因調査用に、直近の行をためておく(最大15行)
+            recent_lines.append(line)
+            recent_lines = recent_lines[-15:]
 
             #"PROGRESS 14 20" みたいな行なら、進捗の数字として読む
             if line.startswith("PROGRESS"):
@@ -266,7 +275,13 @@ def _run_pipeline(count):
         #終了コードを確認して、0以外なら失敗
         proc.wait()
         if proc.returncode != 0:
-            progress.update_job(running=False, error="記事の生成に失敗しました")
+            #直近の出力(最後の5行)を原因として画面に出す。
+            #これで「feedparserが無い」「git push失敗」などの本当の理由が分かる。
+            tail = " / ".join(recent_lines[-5:])
+            progress.update_job(
+                running=False,
+                error=f"記事の生成に失敗しました: {tail}",
+            )
             return
 
     except Exception as e:
