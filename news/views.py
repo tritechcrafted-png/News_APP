@@ -148,8 +148,6 @@ def update_feed(request):
     #同期を裏のスレッドで始める。リクエストはすぐ返るので Broken pipe にならない
     threading.Thread(target=_run_sync, daemon=True).start()
 
-    messages.success(request, "GitHubから同期を開始しました。数秒後にページを再読み込みしてください。")
-
     #すぐにホームに戻る
     return redirect("news:home")
 

@@ -42,10 +42,60 @@
 </ul>
 
 <!-- GitHubから同期する（更新ボタン） -->
-<form method="post" action="{% url 'news:update_feed' %}">
+<form method="post" action="{% url 'news:update_feed' %}" id="sync-form">
     {% csrf_token %}
-    <button type="submit">更新</button>
+    <!-- 通常時の更新ボタン -->
+    <button type="submit" id="sync-button">更新</button>
 </form>
+
+<!-- 【同期中のみ表示】ボタンの代わりに切り替わって表示されるエリア -->
+<div id="countdown-status" style="color: #555; font-weight: bold; display: none;">
+    記事を同期中... あと <span id="countdown-timer">8</span> 秒で自動更新します。
+</div>
+
+<script>
+document.getElementById('sync-form').addEventListener('submit', function() {
+    // 1. 連打防止のためにボタンを即座に無効化する
+    document.getElementById('sync-button').disabled = true;
+    // 2. ボタンを押したという目印をブラウザに保存する
+    sessionStorage.setItem('is_syncing', 'true');
+});
+
+// ページが読み込まれたときに動く処理（リダイレクトして戻ってきた直後）
+document.addEventListener("DOMContentLoaded", function() {
+    // ブラウザに「同期中の目印」があるか確認
+    if (sessionStorage.getItem('is_syncing') === 'true') {
+        sessionStorage.removeItem('is_syncing'); // 目印を消す
+
+        const syncForm = document.getElementById('sync-form');
+        const statusDiv = document.getElementById('countdown-status');
+        const timerSpan = document.getElementById('countdown-timer');
+
+        // 【ここがポイント】通常の更新ボタン（フォームごと）を非表示にする
+        syncForm.style.display = 'none';
+        // 代わりにカウントダウンメッセージを表示する
+        statusDiv.style.display = 'block';
+
+        let timeLeft = 8; // カウントダウンの開始秒数
+
+        // 1秒ごとに実行するタイマー
+        const countdownInterval = setInterval(function() {
+            timeLeft--; 
+            timerSpan.innerText = timeLeft; // 画面の数字を減らす
+
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+
+        // 8秒後にページを自動リロード
+        setTimeout(function() {
+            window.location.reload();
+        }, 8000);
+    }
+});
+</script>
+
 
 <!-- デモ用: DBの記事を全部消す。GitHubのデータは消えない -->
 <form method="post"
@@ -58,7 +108,7 @@
 <hr>
 
 <h2>新しい記事を取りに行く</h2>
-<p>RSS取得 → Claude要約＋タグ付け → GitHub保存 → DB取り込み を一気に実行します。</p>
+<p>記事の入手から要約まで一気に実行します。</p>
 
 <!-- 取得する記事数を選ぶ。デモは「1件」で速い -->
 <label for="count-select">取得する記事数：</label>
@@ -69,7 +119,7 @@
     <option value="0">全部</option>
 </select>
 
-<button id="generate-btn">記事を生成（RSS＋Claude要約）</button>
+<button id="generate-btn">記事を生成</button>
 
 <!-- 進捗バー。最初は display:none で隠しておいて、ボタンを押したら表示する -->
 <div id="progress-box" style="display:none; margin-top:1em;">
@@ -131,7 +181,7 @@ btn.addEventListener("click", async () => {
     }
 
     // 1秒(1000ミリ秒)ごとに、進捗を取りに行く
-    timer = setInterval(pollProgress, 1000);
+    timer = setInterval(pollProgress, 500);
 });
 
 // --- 1秒ごとに呼ばれる：進捗を取ってきてバーを描く ---
