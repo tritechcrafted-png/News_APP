@@ -52,7 +52,7 @@
       action="{% url 'news:clear_articles' %}"
       onsubmit="return confirm('本当にDBの記事を全部消しますか？（GitHubのデータは消えません）');">
     {% csrf_token %}
-    <button type="submit">DBの記事を全部削除（デモ用）</button>
+    <button type="submit">DBの記事を全部削除</button>
 </form>
 
 <hr>
@@ -63,7 +63,7 @@
 <!-- 取得する記事数を選ぶ。デモは「1件」で速い -->
 <label for="count-select">取得する記事数：</label>
 <select id="count-select">
-    <option value="1">1件（デモ用・速い）</option>
+    <option value="1">1件</option>
     <option value="5">5件</option>
     <option value="10">10件</option>
     <option value="0">全部</option>
