@@ -5,80 +5,96 @@
 
 {% block content %}
 
+<!-- ===== Breadcrumb ===== -->
 <!-- ホームに戻るリンク　-->
-<p><a href="{% url 'news:home' %}">ホームに戻る</a></p>
+<nav class="breadcrumb" id="breadcrumb" aria-label="パンくずリスト">
+    <a href="{% url 'news:home' %}">🏠 ホーム</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">{{ target_date|date:"Y年n月j日" }}</span>
+</nav>
 
+<!-- ===== Page Header ===== -->
+<div class="page-header fade-in-up">
+    <h1 class="page-title">{{ target_date|date:"Y年n月j日" }}の記事</h1>
+    <p class="page-subtitle">{{ articles|length }}件の記事</p>
+</div>
+
+<!-- ===== ジャンルフィルター (ピルボタン) ===== -->
 <!-- ジャンルで絞り込む。選んだら「この日の」記事だけをそのジャンルで絞り込む。 -->
 <!-- ↓この日に出てくるタグだけを並べる。?genre=○○ を付けて同じ日付ページに戻る。 -->
-<p>
-    <label for="genre-filter">ジャンルで絞り込む：</label>
-    <select id="genre-filter">
-        <!-- 何も絞らない状態。クエリ無しの日付ページに戻る -->
-        <option value="{% url 'news:day' target_date.year target_date.month target_date.day %}">-- すべて表示 --</option>
-        {% for tag in day_tags %}
-            <!-- 同じ日付ページのURL + ?genre=タグ名。selected_genre と同じなら選択状態にする -->
-            <option value="{% url 'news:day' target_date.year target_date.month target_date.day %}?genre={{ tag.name|urlencode }}"
-                    {% if tag.name == selected_genre %}selected{% endif %}>{{ tag.name }}</option>
-        {% endfor %}
-    </select>
-</p>
+<div class="filter-bar fade-in-up" id="genre-filter-bar">
+    <span class="filter-label">ジャンル：</span>
 
-<h2>{{ target_date|date:"Y年n月j日"}}の記事 ({{ articles|length }}件)</h2>
+    <!-- 何も絞らない状態。クエリ無しの日付ページに戻る -->
+    <a href="{% url 'news:day' target_date.year target_date.month target_date.day %}"
+       class="filter-pill {% if not selected_genre %}filter-pill--active{% endif %}"
+       id="filter-all">
+        すべて
+    </a>
 
-<!-- djangoの for loop 記事を一つずつ取り出していく-->
-{% for article in articles %}
+    {% for tag in day_tags %}
+        <!-- 同じ日付ページのURL + ?genre=タグ名。selected_genre と同じなら選択状態にする -->
+        <a href="{% url 'news:day' target_date.year target_date.month target_date.day %}?genre={{ tag.name|urlencode }}"
+           class="filter-pill {% if tag.name == selected_genre %}filter-pill--active{% endif %}"
+           id="filter-{{ tag.name }}">
+            {{ tag.name }}
+        </a>
+    {% endfor %}
+</div>
+
+<!-- ===== 記事一覧 ===== -->
+<div class="article-list" id="article-list">
+    <!-- djangoの for loop 記事を一つずつ取り出していく-->
+    {% for article in articles %}
 
     <!-- 1記事ぶんを枠で囲んで、記事どうしをはっきり区切る -->
-    <div style="border:1px solid #ccc; border-radius:8px; padding:1em 1.2em; margin-bottom:1.2em;">
+    <article class="article-card fade-in-up" id="article-{{ article.pk }}">
 
-        <!-- 見出し(タイトル)はそのまま残す。クリックで元記事を新しいタブで開く -->
-        <h3 style="margin:0 0 .3em 0;">
-            <a href="{{ article.url }}" target="_blank">{{ article.title }}</a>
-        </h3>
+        <!-- メタ情報 -->
+        <div class="article-meta">
+            <!-- ソースとタグ -->
+            <span class="article-source">{{ article.source }}</span>
 
-        <!-- ソースとタグ。じゃまにならないように薄い色で -->
-        <p style="margin:.2em 0; color:#666;">
-            <small>{{ article.source }}</small>
-            {% for tag in article.tags.all %}
-                <a href="{% url 'news:tag' tag.name %}">#{{ tag.name }}</a>
-            {% endfor %}
-        </p>
+            <div class="tag-list">
+                {% for tag in article.tags.all %}
+                    <a href="{% url 'news:tag' tag.name %}"
+                       class="tag-badge tag-badge--{{ tag.name|lower }}"
+                       id="tag-link-{{ tag.name }}-{{ article.pk }}">
+                        #{{ tag.name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 見出し(タイトル)。クリックで元記事を新しいタブで開く -->
+        <h2 class="article-title">
+            <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">{{ article.title }}</a>
+        </h2>
 
         <!-- 短いリード文。記事の内容を一言でまとめた「見出しの説明」 -->
         {% if article.description %}
-            <p style="margin:.5em 0 .3em 0; font-weight:bold;">{{ article.description }}</p>
+            <p class="article-lead">{{ article.description }}</p>
         {% endif %}
 
         <!-- やさしい言葉でのくわしい説明。1〜2段落で、誰でも分かるように出す -->
         <!-- linebreaks:文章の改行を <p>/<br> に変えて、段落として表示する -->
         {% if article.detail %}
-            <div style="margin:.2em 0 0 0; line-height:1.6;">{{ article.detail|linebreaks }}</div>
+            <div class="article-detail">{{ article.detail|linebreaks }}</div>
         {% endif %}
 
         <!-- 短い説明もくわしい説明も無いときだけ、「要約はありません」を出す -->
         {% if not article.description and not article.detail %}
-            <p style="color:#999;"><small>要約はありません</small></p>
+            <p class="article-no-summary">要約はありません</p>
         {% endif %}
 
-    </div>
+    </article>
 
-{% empty %}
-    <p>この日の記事はありません。</p>
-{% endfor %}
-
-<!-- ジャンルのドロップダウンを動かす小さなスクリプト -->
-<script>
-    // ドロップダウンの要素を取ってくる
-    const genreFilter = document.getElementById("genre-filter");
-
-    // 選択が変わったら、その値(絞り込み後の日付ページURL)へ移動する
-    genreFilter.addEventListener("change", function () {
-
-        // 値が空のときは何もしない（基本的に空にはならないが念のため）
-        if (this.value) {
-            window.location = this.value;
-        }
-    });
-</script>
+    {% empty %}
+        <div class="empty-state" id="empty-state-day">
+            <div class="empty-state-icon">📭</div>
+            <div class="empty-state-text">この日の記事はありません。</div>
+        </div>
+    {% endfor %}
+</div>
 
 {% endblock %}

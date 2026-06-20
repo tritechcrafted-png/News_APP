@@ -4,40 +4,72 @@
 
 {% block content %}
 
-<p><a href="{% url 'news:home' %}">ホームに戻る</a></p>
+<!-- ===== Breadcrumb ===== -->
+<nav class="breadcrumb" id="breadcrumb" aria-label="パンくずリスト">
+    <a href="{% url 'news:home' %}">🏠 ホーム</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">#{{ tag_name }}</span>
+</nav>
 
-<h2>#{{ tag_name }} の記事 ({{ articles|length }}件)</h2>
+<!-- ===== Page Header ===== -->
+<div class="page-header fade-in-up">
+    <h1 class="page-title">
+        <span class="tag-badge tag-badge--{{ tag_name|lower }}" style="font-size: 1rem; padding: 4px 14px; vertical-align: middle;">
+            #{{ tag_name }}
+        </span>
+        <span style="margin-left: 0.5rem;">の記事</span>
+    </h1>
+    <p class="page-subtitle">{{ articles|length }}件の記事</p>
+</div>
 
-{% for article in articles %}
+<!-- ===== 記事一覧 ===== -->
+<div class="article-list" id="article-list">
+    {% for article in articles %}
 
     <!-- 1記事ぶんを枠で囲んで、記事どうしをはっきり区切る -->
-    <div style="border:1px solid #ccc; border-radius:8px; padding:1em 1.2em; margin-bottom:1.2em;">
+    <article class="article-card fade-in-up" id="article-{{ article.pk }}">
+
+        <!-- メタ情報 -->
+        <div class="article-meta">
+            <!-- ソースと日付。じゃまにならないように -->
+            <span class="article-source">{{ article.source }}</span>
+            <span class="article-date-badge">{{ article.article_date|date:"Y年n月j日" }}</span>
+
+            <div class="tag-list">
+                {% for tag in article.tags.all %}
+                    <a href="{% url 'news:tag' tag.name %}"
+                       class="tag-badge tag-badge--{{ tag.name|lower }}"
+                       id="tag-link-{{ tag.name }}-{{ article.pk }}">
+                        #{{ tag.name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
 
         <!-- 見出し(タイトル)。クリックで元記事を新しいタブで開く -->
-        <h3 style="margin:0 0 .3em 0;">
-            <a href="{{ article.url }}" target="_blank">{{ article.title }}</a>
-        </h3>
-
-        <!-- ソースと日付。じゃまにならないように薄い色で -->
-        <p style="margin:.2em 0; color:#666;">
-            <small>{{ article.source }} ・ {{ article.article_date|date:"Y年n月j日" }}</small>
-        </p>
+        <h2 class="article-title">
+            <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">{{ article.title }}</a>
+        </h2>
 
         <!-- 短いリード文。記事の内容を一言でまとめた「見出しの説明」 -->
         {% if article.description %}
-            <p style="margin:.5em 0 .3em 0; font-weight:bold;">{{ article.description }}</p>
+            <p class="article-lead">{{ article.description }}</p>
         {% endif %}
 
         <!-- やさしい言葉でのくわしい説明。1〜2段落で、誰でも分かるように出す -->
         <!-- linebreaks:文章の改行を <p>/<br> に変えて、段落として表示する -->
         {% if article.detail %}
-            <div style="margin:.2em 0 0 0; line-height:1.6;">{{ article.detail|linebreaks }}</div>
+            <div class="article-detail">{{ article.detail|linebreaks }}</div>
         {% endif %}
 
-    </div>
+    </article>
 
-{% empty %}
-    <p>このタグの記事はまだありません。</p>
-{% endfor %}
+    {% empty %}
+        <div class="empty-state" id="empty-state-tag">
+            <div class="empty-state-icon">🏷️</div>
+            <div class="empty-state-text">このタグの記事はまだありません。</div>
+        </div>
+    {% endfor %}
+</div>
 
 {% endblock %}

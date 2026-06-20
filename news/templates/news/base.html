@@ -1,40 +1,112 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="テックニュースを日付ごとに整理して、AIが要約してお届け。毎日のテック情報をわかりやすく。">
 
     <!-- {# {% block title %}でdjangoで上書き可能であることを示す #} -->
     <title>{% block title %}Tech News{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{% static 'news/style.css' %}">
 </head>
 <body>
 
+    <!-- Animated background mesh -->
+    <div class="bg-mesh" aria-hidden="true">
+        <div class="bg-mesh-orb"></div>
+    </div>
+
+    <!--ページ上部のナビゲーション-->
+    <nav class="site-nav" id="site-nav">
+        <div class="nav-inner">
+            <!-- hrefで飛ぶリンク先を指定する -->
+            <!--{# "{% url 'news:home' %}"でdjangoで動的にリンク先を指定 #}-->
+            <a href="{% url 'news:home' %}" class="nav-logo" id="nav-logo">
+                <span class="nav-logo-icon" aria-hidden="true">⚡</span>
+                Tech News
+            </a>
+
+            <div class="nav-stats">
+                {% block nav_stats %}{% endblock %}
+            </div>
+        </div>
+    </nav>
+
     <!-- もし、メッセージが存在するならTrue -->
     {% if messages %}
-
+    <div class="toast-container" id="toast-container">
         {% for message in messages %}
-
-        <!-- <strong>で太字にして見やすいようにする -->
-        <!-- {message}で変数の値を埋め込む　Pythonのf""と同じ" -->
-        <p><strong>{{message}} </strong></p>
-
+        <!-- {message}で変数の値を埋め込む　Pythonのf""と同じ -->
+        <div class="toast" role="alert">{{message}}</div>
         {% endfor %}
+    </div>
+
+    <script>
+    // トースト通知を5秒後に自動で消す
+    setTimeout(() => {
+        const container = document.getElementById('toast-container');
+        if (container) {
+            container.style.transition = 'opacity 0.4s';
+            container.style.opacity = '0';
+            setTimeout(() => container.remove(), 400);
+        }
+    }, 5000);
+    </script>
     {% endif %}
 
     <!-- ページのメインコンテンツを入れる-->
-    <main>
+    <main class="site-container">
 
         <!-- ここに毎日の記事のリンクなどで移動できるようにする -->
         {% block content %}
         {% endblock %}
-    
+
     </main>
 
-    <hr>
+    <!-- ページ上部に戻るボタン。スクロールすると出てくる(JSで .is-visible を付け外し) -->
+    <button type="button" class="to-top" id="to-top" aria-label="上に戻る" title="上に戻る">↑</button>
+
+    <script>
+    // 戻るボタン: 400pxより下に来たら表示、押したら一番上へスクロール
+    (function () {
+        const btn = document.getElementById("to-top");
+        if (!btn) return;
+
+        // スクロール量を見て、ボタンの表示/非表示を切り替える
+        function toggle() {
+            if (window.scrollY > 400) {
+                btn.classList.add("is-visible");
+            } else {
+                btn.classList.remove("is-visible");
+            }
+        }
+
+        window.addEventListener("scroll", toggle, { passive: true });
+        toggle();  // 読み込み直後の状態も合わせておく
+
+        // 押したら一番上へ。reduce-motion の人には instant でスクロール
+        btn.addEventListener("click", () => {
+            const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+        });
+    })();
+    </script>
 
     <!-- footer:ページの一番下に情報を入れる場所を用意 -->
-    <footer>
-        <p> Tech News App [Ryosuke Komatsu] </p>
-
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <p class="footer-text">
+                © 2026 <a href="{% url 'news:home' %}">Tech News</a> — Ryosuke Komatsu
+            </p>
+        </div>
     </footer>
 
 </body>

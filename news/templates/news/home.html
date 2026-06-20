@@ -4,133 +4,185 @@
 <!-- base.html のタブのタイトルを上書き -->
 {% block title %} Tech News ホーム{% endblock %}
 
+{% block nav_stats %}
+    <span><span class="nav-stat-value">{{ total }}</span> 記事</span>
+    <span><span class="nav-stat-value">{{ date_list|length }}</span> 日分</span>
+{% endblock %}
+
 {% block content %}
-<h1> Tech News </h1>
 
-<h2>このアプリの使い方</h2>
+<!-- ===== Hero Section ===== -->
+<section class="hero fade-in-up" id="hero-section">
+    <h1 class="hero-title">Tech News</h1>
+    <p class="hero-subtitle">
+        テックニュースを日付ごとに整理して、AIが要約してお届け。<br>
+        毎日のテック情報をわかりやすく。
+    </p>
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <div class="hero-stat-number">{{ total }}</div>
+            <div class="hero-stat-label">記事数</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-number">{{ date_list|length }}</div>
+            <div class="hero-stat-label">日数</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-number">{{ all_tags|length }}</div>
+            <div class="hero-stat-label">ジャンル</div>
+        </div>
+    </div>
+</section>
 
-<p>テックニュースを日付ごとに整理して表示するアプリ</p>
+<hr class="divider">
 
-<p>
-    記事データはGitHubリポジトリにファイル単位で保存されています<br>
-    [更新]ボタンでGitHubから新しい記事を取得します
-</p>
+<!-- ===== 使い方バナー ===== -->
+<div class="info-banner fade-in-up" id="info-banner">
+    <div class="info-banner-icon">📖</div>
+    <div class="info-banner-content">
+        <div class="info-banner-title">このアプリの使い方</div>
+        <div class="info-banner-text">
+            記事データはGitHubリポジトリにファイル単位で保存されています。
+            下の日付カードをクリックするとその日の記事一覧が表示されます。
+            「更新」ボタンでGitHubから新しい記事を取得できます。
+        </div>
+    </div>
+</div>
 
-<p>
-    下の日付をクリックすると、その日の記事一覧が表示されます<br>
-    各記事には、見出し・ソース・要約が表示されます<br>
-</p>
+<!-- ===== 日付一覧 ===== -->
+<div class="section-header">
+    <h2 class="section-title">📅 記事一覧</h2>
+    <div class="section-line"></div>
+    <span class="section-badge">{{ date_list|length }}日分</span>
+</div>
 
-<hr>
-
-<h2>記事一覧</h2>
-
-<ul>
+<div class="date-grid" id="date-grid">
     <!-- 日付ごとのリストを出していく（タグは出さない） -->
     {% for item in date_list %}
-    <li>
-        <!-- url の中身として引数をスペース区切りで順番に渡す -->
-        <a href="{% url 'news:day' item.article_date.year item.article_date.month item.article_date.day %}">
-            {{ item.article_date|date:"Y年n月j日" }} ({{ item.count }}件)
-        </a>
-    </li>
+    <!-- url の中身として引数をスペース区切りで順番に渡す -->
+    <a href="{% url 'news:day' item.article_date.year item.article_date.month item.article_date.day %}"
+       class="date-card fade-in-up"
+       id="date-card-{{ item.article_date|date:'Y-m-d' }}">
+        <span class="date-card-date">{{ item.article_date|date:"Y年n月j日" }}</span>
+        <span class="date-card-count">
+            <span class="date-card-count-num">{{ item.count }}</span>
+            件の記事
+        </span>
+    </a>
 
     <!-- for loop のリストが空だったとき -->
     {% empty %}
-        <li>記事がまだありません。[更新]ボタンを押して記事の更新を行ってください</li>
+    <div class="empty-state" id="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-text">記事がまだありません</div>
+        <div class="empty-state-hint">「更新」ボタンを押して記事を取得してください</div>
+    </div>
     {% endfor %}
-</ul>
+</div>
 
-<!-- GitHubから同期する（更新ボタン） -->
-<form method="post" action="{% url 'news:update_feed' %}" id="sync-form">
-    {% csrf_token %}
-    <!-- 通常時の更新ボタン -->
-    <button type="submit" id="sync-button">更新</button>
-</form>
+<!-- ===== 管理アクション ===== -->
+<div class="btn-group" style="margin-bottom: var(--space-2xl);">
+    <!-- GitHubから同期する（更新ボタン）。押すと下のカウントダウンに切り替わる -->
+    <form method="post" action="{% url 'news:update_feed' %}" id="sync-form" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ghost" id="sync-button">
+            🔄 更新
+        </button>
+    </form>
 
-<!-- 【同期中のみ表示】ボタンの代わりに切り替わって表示されるエリア -->
-<div id="countdown-status" style="color: #555; font-weight: bold; display: none;">
-    記事を同期中... あと <span id="countdown-timer">8</span> 秒で自動更新します。
+    <!-- デモ用: DBの記事を全部消す。GitHubのデータは消えない -->
+    <form method="post"
+          action="{% url 'news:clear_articles' %}"
+          onsubmit="return confirm('本当にDBの記事を全部消しますか？（GitHubのデータは消えません）');"
+          style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" id="btn-clear">
+            🗑️ DB記事を削除
+        </button>
+    </form>
+</div>
+
+<!-- 【同期中のみ表示】更新ボタンの代わりに切り替わって出るカウントダウン -->
+<div id="countdown-status" class="info-banner" style="display:none; margin-bottom: var(--space-2xl);">
+    <div class="info-banner-icon">⏳</div>
+    <div class="info-banner-content">
+        <div class="info-banner-text">
+            記事を同期中... あと <span id="countdown-timer">8</span> 秒で自動更新します。
+        </div>
+    </div>
 </div>
 
 <script>
+// 更新ボタン: 押したら連打防止で無効化 → 戻ってきたらカウントダウンして自動リロード
 document.getElementById('sync-form').addEventListener('submit', function() {
-    // 1. 連打防止のためにボタンを即座に無効化する
-    document.getElementById('sync-button').disabled = true;
-    // 2. ボタンを押したという目印をブラウザに保存する
-    sessionStorage.setItem('is_syncing', 'true');
+    document.getElementById('sync-button').disabled = true;   // 連打防止
+    sessionStorage.setItem('is_syncing', 'true');             // 押した目印を残す
 });
 
-// ページが読み込まれたときに動く処理（リダイレクトして戻ってきた直後）
+// リダイレクトで戻ってきた直後に、目印があればカウントダウンを始める
 document.addEventListener("DOMContentLoaded", function() {
-    // ブラウザに「同期中の目印」があるか確認
     if (sessionStorage.getItem('is_syncing') === 'true') {
-        sessionStorage.removeItem('is_syncing'); // 目印を消す
+        sessionStorage.removeItem('is_syncing');              // 目印を消す
 
-        const syncForm = document.getElementById('sync-form');
+        const syncForm  = document.getElementById('sync-form');
         const statusDiv = document.getElementById('countdown-status');
         const timerSpan = document.getElementById('countdown-timer');
 
-        // 【ここがポイント】通常の更新ボタン（フォームごと）を非表示にする
-        syncForm.style.display = 'none';
-        // 代わりにカウントダウンメッセージを表示する
-        statusDiv.style.display = 'block';
+        syncForm.style.display = 'none';     // 更新ボタンを隠して
+        statusDiv.style.display = 'flex';    // カウントダウンを出す (info-banner は flex)
 
-        let timeLeft = 8; // カウントダウンの開始秒数
-
-        // 1秒ごとに実行するタイマー
+        let timeLeft = 8;
         const countdownInterval = setInterval(function() {
-            timeLeft--; 
-            timerSpan.innerText = timeLeft; // 画面の数字を減らす
-
-            if (timeLeft <= 0) {
-                clearInterval(countdownInterval);
-            }
+            timeLeft--;
+            timerSpan.innerText = timeLeft;
+            if (timeLeft <= 0) clearInterval(countdownInterval);
         }, 1000);
 
-        // 8秒後にページを自動リロード
-        setTimeout(function() {
-            window.location.reload();
-        }, 8000);
+        // 8秒後にページを自動リロードして、増えた記事を反映する
+        setTimeout(function() { window.location.reload(); }, 8000);
     }
 });
 </script>
 
+<hr class="divider">
 
-<!-- デモ用: DBの記事を全部消す。GitHubのデータは消えない -->
-<form method="post"
-      action="{% url 'news:clear_articles' %}"
-      onsubmit="return confirm('本当にDBの記事を全部消しますか？（GitHubのデータは消えません）');">
-    {% csrf_token %}
-    <button type="submit">DBの記事を全部削除</button>
-</form>
+<!-- ===== 記事生成パネル ===== -->
+<div class="action-panel fade-in-up" id="generate-panel">
+    <div class="action-panel-header">
+        <span>🤖</span>
+        <span class="action-panel-title">新しい記事を取りに行く</span>
+    </div>
+    <p class="action-panel-desc">
+        RSS取得 → Claude要約＋タグ付け → GitHub保存 → DB取り込み を一気に実行します。
+    </p>
 
-<hr>
-
-<h2>新しい記事を取りに行く</h2>
-<p>記事の入手から要約まで一気に実行します。</p>
-
-<!-- 取得する記事数を選ぶ。デモは「1件」で速い -->
-<label for="count-select">取得する記事数：</label>
-<select id="count-select">
-    <option value="1">1件</option>
-    <option value="5">5件</option>
-    <option value="10">10件</option>
-    <option value="0">全部</option>
-</select>
-
-<button id="generate-btn">記事を生成</button>
-
-<!-- 進捗バー。最初は display:none で隠しておいて、ボタンを押したら表示する -->
-<div id="progress-box" style="display:none; margin-top:1em;">
-
-    <!-- 外側の灰色の枠 = 100%の長さ -->
-    <div style="width:300px; height:20px; border:1px solid #999; background:#eee;">
-        <!-- 内側の緑 = 今の進捗。widthを％で伸ばしていく -->
-        <div id="progress-fill" style="width:0%; height:100%; background:#4caf50;"></div>
+    <div class="action-row">
+        <!-- 取得する記事数を選ぶ。デモは「1件」で速い -->
+        <label for="count-select" class="filter-label">取得する記事数：</label>
+        <select id="count-select" class="form-select">
+            <option value="1">1件（デモ用・速い）</option>
+            <option value="5">5件</option>
+            <option value="10">10件</option>
+            <option value="0">全部</option>
+        </select>
+        <button id="generate-btn" class="btn btn-primary">
+            ⚡ 記事を生成
+        </button>
     </div>
 
-    <p id="progress-text">準備中...</p>
+    <!-- 進捗バー。最初は display:none で隠しておいて、ボタンを押したら表示する -->
+    <div id="progress-box" class="progress-panel" style="display:none;">
+        <div class="progress-wrapper">
+            <div class="progress-track">
+                <!-- 内側の色 = 今の進捗。widthを％で伸ばしていく -->
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <p id="progress-text" class="progress-text">
+                <span class="progress-spinner"></span>
+                準備中...
+            </p>
+        </div>
+    </div>
 </div>
 
 <!-- JSがCSRFトークンを読むために、隠しトークンを1つ置いておく -->
@@ -156,7 +208,7 @@ btn.addEventListener("click", async () => {
 
     // 進捗バーを表示する
     box.style.display = "block";
-    text.textContent = "開始中...";
+    text.innerHTML = '<span class="progress-spinner"></span> 開始中...';
 
     // ドロップダウンで選ばれている件数を読む
     const count = sel.value;
@@ -191,17 +243,17 @@ async function pollProgress() {
 
     // 緑のバーを percent% の長さまで伸ばす
     fill.style.width = job.percent + "%";
-    text.textContent = job.message + " (" + job.percent + "%)";
+    text.innerHTML = '<span class="progress-spinner"></span> ' + job.message + " (" + job.percent + "%)";
 
     // running が false になったら終わり
     if (!job.running) {
         clearInterval(timer);   // 1秒ごとの繰り返しを止める
 
         if (job.error) {
-            text.textContent = "エラー: " + job.error;
+            text.textContent = "❌ エラー: " + job.error;
             btn.disabled = false;
         } else {
-            text.textContent = "完了！ページを更新します...";
+            text.innerHTML = "✅ 完了！ページを更新します...";
             // 新しい記事を画面に反映するために、少し待ってからリロード
             setTimeout(() => location.reload(), 1200);
         }
