@@ -9,28 +9,23 @@
     <!-- {# {% block title %}でdjangoで上書き可能であることを示す #} -->
     <title>{% block title %}Tech News{% endblock %}</title>
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts — Space Grotesk(見出し) / Zen Kaku Gothic New(本文) / JetBrains Mono(データ) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- Stylesheet -->
     <link rel="stylesheet" href="{% static 'news/style.css' %}">
 </head>
 <body>
 
-    <!-- Animated background mesh -->
-    <div class="bg-mesh" aria-hidden="true">
-        <div class="bg-mesh-orb"></div>
-    </div>
-
-    <!--ページ上部のナビゲーション-->
+    <!--ページ上部のナビゲーション（マストヘッド）-->
     <nav class="site-nav" id="site-nav">
         <div class="nav-inner">
             <!-- hrefで飛ぶリンク先を指定する -->
             <!--{# "{% url 'news:home' %}"でdjangoで動的にリンク先を指定 #}-->
             <a href="{% url 'news:home' %}" class="nav-logo" id="nav-logo">
-                <span class="nav-logo-icon" aria-hidden="true">⚡</span>
+                <span class="nav-logo-icon" aria-hidden="true"></span>
                 Tech News
             </a>
 

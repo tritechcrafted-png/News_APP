@@ -13,69 +13,48 @@
 
 <!-- ===== Hero Section ===== -->
 <section class="hero fade-in-up" id="hero-section">
+    <p class="hero-eyebrow">Daily Tech Briefing</p>
     <h1 class="hero-title">Tech News</h1>
     <p class="hero-subtitle">
-        テックニュースを日付ごとに整理して、AIが要約してお届け。<br>
-        毎日のテック情報をわかりやすく。
+        毎日のテックニュースを、やさしい日本語で。<br>
+        日付ごとに整理して、要点だけお届けします。
     </p>
-    <div class="hero-stats">
-        <div class="hero-stat">
-            <div class="hero-stat-number">{{ total }}</div>
-            <div class="hero-stat-label">記事数</div>
-        </div>
-        <div class="hero-stat">
-            <div class="hero-stat-number">{{ date_list|length }}</div>
-            <div class="hero-stat-label">日数</div>
-        </div>
-        <div class="hero-stat">
-            <div class="hero-stat-number">{{ all_tags|length }}</div>
-            <div class="hero-stat-label">ジャンル</div>
-        </div>
+    <!-- ステータス読み取り行。大きな数字を3つ並べる代わりに、計器のような1行で出す -->
+    <div class="status-readout">
+        <span class="status-item"><span class="status-dot" aria-hidden="true"></span>配信中</span>
+        <span class="status-item"><b>{{ total }}</b> 記事</span>
+        <span class="status-item"><b>{{ date_list|length }}</b> 日分</span>
+        <span class="status-item"><b>{{ all_tags|length }}</b> ジャンル</span>
     </div>
 </section>
 
 <hr class="divider">
 
-<!-- ===== 使い方バナー ===== -->
-<div class="info-banner fade-in-up" id="info-banner">
-    <div class="info-banner-icon">📖</div>
-    <div class="info-banner-content">
-        <div class="info-banner-title">このアプリの使い方</div>
-        <div class="info-banner-text">
-            記事データはGitHubリポジトリにファイル単位で保存されています。
-            下の日付カードをクリックするとその日の記事一覧が表示されます。
-            「更新」ボタンでGitHubから新しい記事を取得できます。
-        </div>
-    </div>
-</div>
-
 <!-- ===== 日付一覧 ===== -->
 <div class="section-header">
-    <h2 class="section-title">📅 記事一覧</h2>
+    <h2 class="section-title">記事一覧</h2>
     <div class="section-line"></div>
     <span class="section-badge">{{ date_list|length }}日分</span>
 </div>
 
-<div class="date-grid" id="date-grid">
-    <!-- 日付ごとのリストを出していく（タグは出さない） -->
+<!-- 日付ごとのエディションを、新しい順に縦のタイムラインで並べる -->
+<div class="edition-timeline" id="date-grid">
     {% for item in date_list %}
     <!-- url の中身として引数をスペース区切りで順番に渡す -->
     <a href="{% url 'news:day' item.article_date.year item.article_date.month item.article_date.day %}"
-       class="date-card fade-in-up"
+       class="edition fade-in-up"
        id="date-card-{{ item.article_date|date:'Y-m-d' }}">
-        <span class="date-card-date">{{ item.article_date|date:"Y年n月j日" }}</span>
-        <span class="date-card-count">
-            <span class="date-card-count-num">{{ item.count }}</span>
-            件の記事
-        </span>
+        <time class="edition-date">{{ item.article_date|date:"Y年n月j日" }}</time>
+        <span class="edition-count"><b>{{ item.count }}</b> 記事</span>
+        <span class="edition-go" aria-hidden="true">開く →</span>
     </a>
 
     <!-- for loop のリストが空だったとき -->
     {% empty %}
     <div class="empty-state" id="empty-state">
-        <div class="empty-state-icon">📭</div>
-        <div class="empty-state-text">記事がまだありません</div>
-        <div class="empty-state-hint">「更新」ボタンを押して記事を取得してください</div>
+        <div class="empty-state-icon">∅</div>
+        <div class="empty-state-text">まだ記事がありません</div>
+        <div class="empty-state-hint">下の「最新を取得」を押すと記事を集めます</div>
     </div>
     {% endfor %}
 </div>
@@ -86,28 +65,28 @@
     <form method="post" action="{% url 'news:update_feed' %}" id="sync-form" style="display:inline;">
         {% csrf_token %}
         <button type="submit" class="btn btn-ghost" id="sync-button">
-            🔄 更新
+            最新を取得
         </button>
     </form>
 
     <!-- デモ用: DBの記事を全部消す。GitHubのデータは消えない -->
     <form method="post"
           action="{% url 'news:clear_articles' %}"
-          onsubmit="return confirm('本当にDBの記事を全部消しますか？（GitHubのデータは消えません）');"
+          onsubmit="return confirm('表示中の記事をすべて消去します。保存元のデータは残ります。よろしいですか？');"
           style="display:inline;">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger" id="btn-clear">
-            🗑️ DB記事を削除
+            表示をリセット
         </button>
     </form>
 </div>
 
 <!-- 【同期中のみ表示】更新ボタンの代わりに切り替わって出るカウントダウン -->
 <div id="countdown-status" class="info-banner" style="display:none; margin-bottom: var(--space-2xl);">
-    <div class="info-banner-icon">⏳</div>
+    <div class="info-banner-icon">取得中</div>
     <div class="info-banner-content">
         <div class="info-banner-text">
-            記事を同期中... あと <span id="countdown-timer">8</span> 秒で自動更新します。
+            最新の記事を取得しています。あと <span id="countdown-timer">8</span> 秒で画面を更新します。
         </div>
     </div>
 </div>
@@ -149,24 +128,24 @@ document.addEventListener("DOMContentLoaded", function() {
 <!-- ===== 記事生成パネル ===== -->
 <div class="action-panel fade-in-up" id="generate-panel">
     <div class="action-panel-header">
-        <span>🤖</span>
-        <span class="action-panel-title">新しい記事を取りに行く</span>
+        <span>新着</span>
+        <span class="action-panel-title">最新ニュースを集める</span>
     </div>
     <p class="action-panel-desc">
-        RSS取得 → Claude要約＋タグ付け → GitHub保存 → DB取り込み を一気に実行します。
+        ニュースを取り込み、要点をやさしい日本語にまとめ、ジャンル別に整理します。
     </p>
 
     <div class="action-row">
         <!-- 取得する記事数を選ぶ。デモは「1件」で速い -->
-        <label for="count-select" class="filter-label">取得する記事数：</label>
+        <label for="count-select" class="filter-label">取得する件数：</label>
         <select id="count-select" class="form-select">
-            <option value="1">1件（デモ用・速い）</option>
+            <option value="1">1件（おためし・速い）</option>
             <option value="5">5件</option>
             <option value="10">10件</option>
-            <option value="0">全部</option>
+            <option value="0">すべて</option>
         </select>
         <button id="generate-btn" class="btn btn-primary">
-            ⚡ 記事を生成
+            集める
         </button>
     </div>
 
@@ -208,7 +187,7 @@ btn.addEventListener("click", async () => {
 
     // 進捗バーを表示する
     box.style.display = "block";
-    text.innerHTML = '<span class="progress-spinner"></span> 開始中...';
+    text.innerHTML = '<span class="progress-spinner"></span> 開始しています...';
 
     // ドロップダウンで選ばれている件数を読む
     const count = sel.value;
@@ -250,10 +229,10 @@ async function pollProgress() {
         clearInterval(timer);   // 1秒ごとの繰り返しを止める
 
         if (job.error) {
-            text.textContent = "❌ エラー: " + job.error;
+            text.textContent = "取得できませんでした: " + job.error;
             btn.disabled = false;
         } else {
-            text.innerHTML = "✅ 完了！ページを更新します...";
+            text.textContent = "完了しました。画面を更新します...";
             // 新しい記事を画面に反映するために、少し待ってからリロード
             setTimeout(() => location.reload(), 1200);
         }

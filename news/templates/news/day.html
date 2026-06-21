@@ -8,7 +8,7 @@
 <!-- ===== Breadcrumb ===== -->
 <!-- ホームに戻るリンク　-->
 <nav class="breadcrumb" id="breadcrumb" aria-label="パンくずリスト">
-    <a href="{% url 'news:home' %}">🏠 ホーム</a>
+    <a href="{% url 'news:home' %}">ホーム</a>
     <span class="breadcrumb-sep">›</span>
     <span class="breadcrumb-current">{{ target_date|date:"Y年n月j日" }}</span>
 </nav>
@@ -91,8 +91,8 @@
 
     {% empty %}
         <div class="empty-state" id="empty-state-day">
-            <div class="empty-state-icon">📭</div>
-            <div class="empty-state-text">この日の記事はありません。</div>
+            <div class="empty-state-icon">∅</div>
+            <div class="empty-state-text">この日の記事はありません</div>
         </div>
     {% endfor %}
 </div>

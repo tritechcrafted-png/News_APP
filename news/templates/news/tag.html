@@ -6,7 +6,7 @@
 
 <!-- ===== Breadcrumb ===== -->
 <nav class="breadcrumb" id="breadcrumb" aria-label="パンくずリスト">
-    <a href="{% url 'news:home' %}">🏠 ホーム</a>
+    <a href="{% url 'news:home' %}">ホーム</a>
     <span class="breadcrumb-sep">›</span>
     <span class="breadcrumb-current">#{{ tag_name }}</span>
 </nav>
@@ -66,8 +66,8 @@
 
     {% empty %}
         <div class="empty-state" id="empty-state-tag">
-            <div class="empty-state-icon">🏷️</div>
-            <div class="empty-state-text">このタグの記事はまだありません。</div>
+            <div class="empty-state-icon">∅</div>
+            <div class="empty-state-text">このタグの記事はまだありません</div>
         </div>
     {% endfor %}
 </div>

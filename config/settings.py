@@ -127,13 +127,10 @@ GITHUB_BASE_URL="https://raw.githubusercontent.com/tritechcrafted-png/tech-news-
 FEED_SCRIPT_DIR = BASE_DIR.parent / "tech-news-data"
 
 #generate_feed.py を動かすときに使う Python。
-#この Django と同じ仮想環境(.venv)の python を明示的に指定する。
-#理由: generate_feed.py は feedparser を import する。サーバーを起動した
-#Python が feedparser を持っていないと、裏で動かしたスクリプトが
-#「No module named 'feedparser'」で落ち、「記事の生成に失敗しました」になる。
-#.venv の python なら feedparser が確実に入っているので、ここを固定して防ぐ。
-FEED_PYTHON = BASE_DIR / ".venv" / "Scripts" / "python.exe"
-
-#もし .venv が見つからなければ、今このDjangoを動かしている python を使う(保険)
-if not FEED_PYTHON.exists():
-    FEED_PYTHON = Path(sys.executable)
+#サーバーを動かしている Python(sys.executable)をそのまま使う。
+#理由: generate_feed.py は feedparser を import する。別の venv を指すと、
+#PCが変わったときに「その venv が別ユーザー用に作られていて壊れている」
+#(例: ptadmin 用の .venv を rkoma のPCで動かす)と落ちてしまう。
+#サーバーが動いている = この Python は必ず動く。なので一番確実。
+#feedparser / sgmllib3k は requirements.txt に入れて、この venv に必ず入るようにした。
+FEED_PYTHON = Path(sys.executable)
