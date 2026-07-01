@@ -19,6 +19,118 @@
 </head>
 <body>
 
+    <!-- 起動画面: セッション中の初回だけ流れる「AIが立ち上がる」ようなブート演出 -->
+    <div class="boot-screen" id="boot-screen" aria-hidden="true">
+        <div class="boot-core">
+            <span class="boot-ring"></span>
+            <span class="boot-brand">TECH NEWS</span>
+        </div>
+        <pre class="boot-log" id="boot-log"></pre>
+        <div class="boot-progress"><span class="boot-progress-fill" id="boot-progress-fill"></span></div>
+        <div class="boot-status" id="boot-status">INITIALIZING<span class="boot-caret"></span></div>
+        <!-- 起動完了後に JARVIS 風のあいさつを一瞬だけ表示する -->
+        <div class="boot-greet" id="boot-greet">
+            Welcome back, Master.
+            <span class="boot-greet-sub" id="boot-greet-sub">ALL SYSTEMS ONLINE</span>
+        </div>
+    </div>
+
+    <script>
+    // 起動画面の制御。既にこのセッションで起動済みなら出さない（毎クリックでは流れない）。
+    (function () {
+        const screen = document.getElementById("boot-screen");
+        if (!screen) return;
+
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const alreadyBooted = sessionStorage.getItem("app_booted") === "true";
+
+        // 既に起動済み or モーション削減設定なら、演出をスキップして即座に閉じる
+        if (alreadyBooted || reduce) {
+            screen.remove();
+            return;
+        }
+        sessionStorage.setItem("app_booted", "true");
+
+        // ここから演出を表示
+        screen.classList.add("is-active");
+
+        const log    = document.getElementById("boot-log");
+        const status = document.getElementById("boot-status");
+        const fill   = document.getElementById("boot-progress-fill");
+
+        // { t: 表示する行, d: この行を出したあとの待ち時間(ms) }
+        // 実際のOS起動ログのように、段階を踏んで立ち上がっていく
+        const steps = [
+            { t: "TECH-NEWS OS  v2.6.1   (build 20260702)",     d: 420 },
+            { t: "POST .............................. OK",       d: 220 },
+            { t: "memory test ....................... 32768K OK", d: 260 },
+            { t: "mounting /data .................... OK",       d: 240 },
+            { t: "",                                             d: 120 },
+            { t: "loading kernel modules:",                     d: 220 },
+            { t: "  [ok] news.relay",                           d: 170 },
+            { t: "  [ok] summarizer.engine",                    d: 210 },
+            { t: "  [ok] genre.index",                          d: 170 },
+            { t: "  [ok] translator.i18n",                      d: 170 },
+            { t: "  [ok] signal.hud",                           d: 200 },
+            { t: "",                                             d: 120 },
+            { t: "establishing uplink ............... OK",       d: 380 },
+            { t: "authenticating relay .............. OK",       d: 300 },
+            { t: "syncing feeds ..................... OK",       d: 340 },
+            { t: "calibrating signal ................ OK",       d: 260 },
+            { t: "running diagnostics ............... PASS",     d: 360 },
+            { t: "",                                             d: 140 },
+            { t: "> all systems nominal",                       d: 500 }
+        ];
+
+        // 1行ずつ、行ごとの待ち時間で順番に表示する（再帰的に次の行へ）
+        let i = 0;
+        function step() {
+            const s = steps[i];
+            log.textContent += s.t + "\n";
+            log.scrollTop = log.scrollHeight;   // 常に最新行が見えるようにする
+
+            i++;
+            const pct = Math.round((i / steps.length) * 100);
+            fill.style.width = pct + "%";                                   // 進捗バーを行数に合わせて伸ばす
+            status.innerHTML = "LOADING " + pct + '% <span class="boot-caret"></span>';
+
+            if (i < steps.length) {
+                setTimeout(step, s.d);
+            } else {
+                // 全行が出たら SYSTEM ONLINE 表示 → あいさつ → フェードアウト
+                status.innerHTML = "SYSTEM ONLINE";
+                status.classList.add("is-online");
+
+                // 時間帯に合わせてサブ文言を切り替える
+                const h = new Date().getHours();
+                let greet = "Good evening";
+                if (h >= 5 && h < 12) {
+                    greet = "Good morning";
+                } else if (h >= 12 && h < 18) {
+                    greet = "Good afternoon";
+                }
+                const sub = document.getElementById("boot-greet-sub");
+                if (sub) {
+                    sub.textContent = greet.toUpperCase() + " · ALL SYSTEMS ONLINE";
+                }
+
+                // 少し SYSTEM ONLINE を見せてから「Welcome back, Master.」を表示
+                setTimeout(function () {
+                    screen.classList.add("is-greeting");
+                }, 550);
+
+                // あいさつを見せてから、ゆっくりフェードアウトして DOM から消す
+                setTimeout(function () {
+                    screen.classList.add("is-done");
+                    setTimeout(function () { screen.remove(); }, 1300);
+                }, 2400);
+            }
+        }
+
+        step();
+    })();
+    </script>
+
     <!--ページ上部のナビゲーション（マストヘッド）-->
     <nav class="site-nav" id="site-nav">
         <div class="nav-inner">
@@ -29,8 +141,21 @@
                 Tech News
             </a>
 
-            <div class="nav-stats">
-                {% block nav_stats %}{% endblock %}
+            <!-- 右側のHUDクラスタ: 取得ボタン + 統計 + 信号メーター + LIVE + 時計 -->
+            <div class="nav-hud">
+                <!-- 記事取得パネルへのショートカット。どのページからでも1クリックで飛べる -->
+                <a href="{% url 'news:home' %}#generate-panel" class="nav-action" id="nav-get" data-i18n="nav.get">取得</a>
+                <div class="nav-stats">
+                    {% block nav_stats %}{% endblock %}
+                </div>
+                <span class="nav-meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                <span class="nav-live">LIVE</span>
+                <span class="nav-clock" id="nav-clock">--:--:--</span>
+                <!-- 言語切り替え (JP / EN)。選択はブラウザに保存される -->
+                <div class="nav-lang" id="nav-lang" role="group" aria-label="Language">
+                    <button type="button" class="nav-lang-opt" data-set-lang="ja">JP</button>
+                    <button type="button" class="nav-lang-opt" data-set-lang="en">EN</button>
+                </div>
             </div>
         </div>
     </nav>
@@ -95,6 +220,21 @@
     })();
     </script>
 
+    <!-- ナビの時計: 1秒ごとに現在時刻を更新するだけの装飾 -->
+    <script>
+    (function () {
+        const el = document.getElementById("nav-clock");
+        if (!el) return;
+        function pad(n) { return String(n).padStart(2, "0"); }
+        function tick() {
+            const d = new Date();
+            el.textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+        }
+        tick();
+        setInterval(tick, 1000);
+    })();
+    </script>
+
     <!-- footer:ページの一番下に情報を入れる場所を用意 -->
     <footer class="site-footer">
         <div class="footer-inner">
@@ -103,6 +243,86 @@
             </p>
         </div>
     </footer>
+
+    <!-- ===== 言語切り替え (クライアント側 i18n) ===== -->
+    <!-- data-i18n を持つ要素の文字を、辞書に従って日本語/英語に差し替える -->
+    <script>
+    (function () {
+        // 各キー: { ja, en }。html:true のものは <br> を含むので innerHTML で差し替える
+        const I18N = {
+            "nav.get":           { ja: "取得", en: "Get" },
+            "home.subtitle":     { ja: "毎日のテックニュースを、やさしい日本語で。<br>日付ごとに整理して、要点だけお届けします。",
+                                   en: "Your daily tech news, in plain language.<br>Sorted by date — just the key points.", html: true },
+            "home.live":         { ja: "配信中", en: "Live" },
+            "label.articles":    { ja: "記事", en: "articles" },
+            "label.days":        { ja: "日分", en: "days" },
+            "label.genres":      { ja: "ジャンル", en: "genres" },
+            "home.editions":     { ja: "記事一覧", en: "Editions" },
+            "edition.open":      { ja: "開く →", en: "Open →" },
+            "home.emptyTitle":   { ja: "まだ記事がありません", en: "No articles yet" },
+            "home.emptyHint":    { ja: "下の「取得」を押すと記事を集めます", en: "Press “Get” below to collect articles" },
+            "home.syncBtn":      { ja: "最新を取得", en: "Get latest" },
+            "home.resetBtn":     { ja: "表示をリセット", en: "Reset view" },
+            "panel.new":         { ja: "新着", en: "New" },
+            "panel.title":       { ja: "最新ニュースを集める", en: "Collect the latest news" },
+            "panel.desc":        { ja: "ニュースを取り込み、要点をやさしい日本語にまとめ、ジャンル別に整理します。",
+                                   en: "Pulls in the news, summarizes the key points, and sorts them by genre." },
+            "panel.countLabel":  { ja: "取得する件数：", en: "How many:" },
+            "panel.collectBtn":  { ja: "集める", en: "Collect" },
+            "opt.one":           { ja: "1件（おためし・速い）", en: "1 (quick demo)" },
+            "opt.five":          { ja: "5件", en: "5 articles" },
+            "opt.ten":           { ja: "10件", en: "10 articles" },
+            "opt.all":           { ja: "すべて", en: "All" },
+            "crumb.home":        { ja: "ホーム", en: "Home" },
+            "count.suffix":      { ja: "件の記事", en: "articles" },
+            "articles.suffix":   { ja: "の記事", en: " articles" },
+            "genre.label":       { ja: "ジャンル：", en: "Genre:" },
+            "genre.all":         { ja: "すべて", en: "All" },
+            "article.noSummary": { ja: "要約はありません", en: "No summary available" },
+            "day.empty":         { ja: "この日の記事はありません", en: "No articles for this day" },
+            "tag.empty":         { ja: "このタグの記事はまだありません", en: "No articles for this tag yet" }
+        };
+
+        const STORAGE_KEY = "site_lang";
+
+        function applyLang(lang) {
+            document.documentElement.lang = lang;
+
+            // data-i18n を持つ要素の文字を、辞書の言語に合わせて差し替える
+            document.querySelectorAll("[data-i18n]").forEach(function (el) {
+                const entry = I18N[el.getAttribute("data-i18n")];
+                if (!entry) return;
+                if (entry.html) {
+                    el.innerHTML = entry[lang];
+                } else {
+                    el.textContent = entry[lang];
+                }
+            });
+
+            // 切り替えボタンの選択状態を更新
+            document.querySelectorAll(".nav-lang-opt").forEach(function (btn) {
+                if (btn.getAttribute("data-set-lang") === lang) {
+                    btn.classList.add("is-active");
+                } else {
+                    btn.classList.remove("is-active");
+                }
+            });
+
+            localStorage.setItem(STORAGE_KEY, lang);
+        }
+
+        // ボタンを押したら、その言語に切り替える
+        document.querySelectorAll(".nav-lang-opt").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                applyLang(btn.getAttribute("data-set-lang"));
+            });
+        });
+
+        // 保存された言語(なければ日本語)で初期化する
+        const saved = localStorage.getItem(STORAGE_KEY) || "ja";
+        applyLang(saved);
+    })();
+    </script>
 
 </body>
 </html>

@@ -5,26 +5,36 @@
 {% block title %} Tech News ホーム{% endblock %}
 
 {% block nav_stats %}
-    <span><span class="nav-stat-value">{{ total }}</span> 記事</span>
-    <span><span class="nav-stat-value">{{ date_list|length }}</span> 日分</span>
+    <span><span class="nav-stat-value">{{ total }}</span> <span data-i18n="label.articles">記事</span></span>
+    <span><span class="nav-stat-value">{{ date_list|length }}</span> <span data-i18n="label.days">日分</span></span>
 {% endblock %}
 
 {% block content %}
+
+<!-- ブート表示: セッション中に一度だけ流れる起動シーケンス(装飾) -->
+<div class="boot-line" id="boot-line"
+     data-text="> establishing uplink... feeds OK · summarizer OK · {{ all_tags|length }} genres online_"></div>
 
 <!-- ===== Hero Section ===== -->
 <section class="hero fade-in-up" id="hero-section">
     <p class="hero-eyebrow">Daily Tech Briefing</p>
     <h1 class="hero-title">Tech News</h1>
-    <p class="hero-subtitle">
+    <p class="hero-subtitle" data-i18n="home.subtitle">
         毎日のテックニュースを、やさしい日本語で。<br>
         日付ごとに整理して、要点だけお届けします。
     </p>
     <!-- ステータス読み取り行。大きな数字を3つ並べる代わりに、計器のような1行で出す -->
     <div class="status-readout">
-        <span class="status-item"><span class="status-dot" aria-hidden="true"></span>配信中</span>
-        <span class="status-item"><b>{{ total }}</b> 記事</span>
-        <span class="status-item"><b>{{ date_list|length }}</b> 日分</span>
-        <span class="status-item"><b>{{ all_tags|length }}</b> ジャンル</span>
+        <span class="status-item"><span class="status-dot" aria-hidden="true"></span><span data-i18n="home.live">配信中</span></span>
+        <span class="status-item"><b class="cu" data-to="{{ total }}">0</b> <span data-i18n="label.articles">記事</span></span>
+        <span class="status-item"><b class="cu" data-to="{{ date_list|length }}">0</b> <span data-i18n="label.days">日分</span></span>
+        <span class="status-item"><b class="cu" data-to="{{ all_tags|length }}">0</b> <span data-i18n="label.genres">ジャンル</span></span>
+    </div>
+
+    <!-- 信号スコープ: 波形 + レーダー掃引 (純粋な装飾) -->
+    <div class="hero-scope" aria-hidden="true">
+        <div class="scope-wave" id="scope-wave"></div>
+        <div class="scope-radar"></div>
     </div>
 </section>
 
@@ -32,9 +42,9 @@
 
 <!-- ===== 日付一覧 ===== -->
 <div class="section-header">
-    <h2 class="section-title">記事一覧</h2>
+    <h2 class="section-title" data-i18n="home.editions">記事一覧</h2>
     <div class="section-line"></div>
-    <span class="section-badge">{{ date_list|length }}日分</span>
+    <span class="section-badge">{{ date_list|length }} <span data-i18n="label.days">日分</span></span>
 </div>
 
 <!-- 日付ごとのエディションを、新しい順に縦のタイムラインで並べる -->
@@ -45,16 +55,16 @@
        class="edition fade-in-up"
        id="date-card-{{ item.article_date|date:'Y-m-d' }}">
         <time class="edition-date">{{ item.article_date|date:"Y年n月j日" }}</time>
-        <span class="edition-count"><b>{{ item.count }}</b> 記事</span>
-        <span class="edition-go" aria-hidden="true">開く →</span>
+        <span class="edition-count"><b>{{ item.count }}</b> <span data-i18n="label.articles">記事</span></span>
+        <span class="edition-go" aria-hidden="true" data-i18n="edition.open">開く →</span>
     </a>
 
     <!-- for loop のリストが空だったとき -->
     {% empty %}
     <div class="empty-state" id="empty-state">
         <div class="empty-state-icon">∅</div>
-        <div class="empty-state-text">まだ記事がありません</div>
-        <div class="empty-state-hint">下の「最新を取得」を押すと記事を集めます</div>
+        <div class="empty-state-text" data-i18n="home.emptyTitle">まだ記事がありません</div>
+        <div class="empty-state-hint" data-i18n="home.emptyHint">下の「取得」を押すと記事を集めます</div>
     </div>
     {% endfor %}
 </div>
@@ -64,7 +74,7 @@
     <!-- GitHubから同期する（更新ボタン）。押すと下のカウントダウンに切り替わる -->
     <form method="post" action="{% url 'news:update_feed' %}" id="sync-form" style="display:inline;">
         {% csrf_token %}
-        <button type="submit" class="btn btn-ghost" id="sync-button">
+        <button type="submit" class="btn btn-ghost" id="sync-button" data-i18n="home.syncBtn">
             最新を取得
         </button>
     </form>
@@ -75,7 +85,7 @@
           onsubmit="return confirm('表示中の記事をすべて消去します。保存元のデータは残ります。よろしいですか？');"
           style="display:inline;">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger" id="btn-clear">
+        <button type="submit" class="btn btn-danger" id="btn-clear" data-i18n="home.resetBtn">
             表示をリセット
         </button>
     </form>
@@ -128,23 +138,23 @@ document.addEventListener("DOMContentLoaded", function() {
 <!-- ===== 記事生成パネル ===== -->
 <div class="action-panel fade-in-up" id="generate-panel">
     <div class="action-panel-header">
-        <span>新着</span>
-        <span class="action-panel-title">最新ニュースを集める</span>
+        <span data-i18n="panel.new">新着</span>
+        <span class="action-panel-title" data-i18n="panel.title">最新ニュースを集める</span>
     </div>
-    <p class="action-panel-desc">
+    <p class="action-panel-desc" data-i18n="panel.desc">
         ニュースを取り込み、要点をやさしい日本語にまとめ、ジャンル別に整理します。
     </p>
 
     <div class="action-row">
         <!-- 取得する記事数を選ぶ。デモは「1件」で速い -->
-        <label for="count-select" class="filter-label">取得する件数：</label>
+        <label for="count-select" class="filter-label" data-i18n="panel.countLabel">取得する件数：</label>
         <select id="count-select" class="form-select">
-            <option value="1">1件（おためし・速い）</option>
-            <option value="5">5件</option>
-            <option value="10">10件</option>
-            <option value="0">すべて</option>
+            <option value="1" data-i18n="opt.one">1件（おためし・速い）</option>
+            <option value="5" data-i18n="opt.five">5件</option>
+            <option value="10" data-i18n="opt.ten">10件</option>
+            <option value="0" data-i18n="opt.all">すべて</option>
         </select>
-        <button id="generate-btn" class="btn btn-primary">
+        <button id="generate-btn" class="btn btn-primary" data-i18n="panel.collectBtn">
             集める
         </button>
     </div>
@@ -238,6 +248,62 @@ async function pollProgress() {
         }
     }
 }
+</script>
+
+<!-- HUD: カウントアップ数値 + 波形バー生成 + 起動シーケンス表示 -->
+<script>
+(function () {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // --- 数字を0から本来の値までカウントアップする ---
+    document.querySelectorAll(".cu").forEach(function (el) {
+        const to = parseInt(el.dataset.to, 10) || 0;
+        if (reduce || to <= 0) {
+            el.textContent = to;
+            return;
+        }
+        let n = 0;
+        const step = Math.max(1, Math.round(to / 40));
+        const id = setInterval(function () {
+            n += step;
+            if (n >= to) {
+                n = to;
+                clearInterval(id);
+            }
+            el.textContent = n;
+        }, 28);
+    });
+
+    // --- 波形スコープのバーを生成する ---
+    const wave = document.getElementById("scope-wave");
+    if (wave) {
+        for (let i = 0; i < 32; i++) {
+            const bar = document.createElement("i");
+            bar.style.animationDelay = (i * 0.05) + "s";
+            wave.appendChild(bar);
+        }
+    }
+
+    // --- 起動シーケンスの文字送り (セッション中1回だけ) ---
+    const boot = document.getElementById("boot-line");
+    if (boot) {
+        const text = boot.dataset.text || "";
+        const alreadyShown = sessionStorage.getItem("boot_shown") === "true";
+        if (reduce || alreadyShown) {
+            boot.textContent = text;
+        } else {
+            sessionStorage.setItem("boot_shown", "true");
+            let i = 0;
+            (function type() {
+                if (i <= text.length) {
+                    boot.innerHTML = text.slice(0, i) + '<span class="boot-caret"></span>';
+                    i++;
+                    setTimeout(type, 16);
+                }
+            })();
+        }
+    }
+})();
 </script>
 
 {% endblock %}

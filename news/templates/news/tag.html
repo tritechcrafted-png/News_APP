@@ -6,7 +6,7 @@
 
 <!-- ===== Breadcrumb ===== -->
 <nav class="breadcrumb" id="breadcrumb" aria-label="パンくずリスト">
-    <a href="{% url 'news:home' %}">ホーム</a>
+    <a href="{% url 'news:home' %}" data-i18n="crumb.home">ホーム</a>
     <span class="breadcrumb-sep">›</span>
     <span class="breadcrumb-current">#{{ tag_name }}</span>
 </nav>
@@ -17,9 +17,9 @@
         <span class="tag-badge tag-badge--{{ tag_name|lower }}" style="font-size: 1rem; padding: 4px 14px; vertical-align: middle;">
             #{{ tag_name }}
         </span>
-        <span style="margin-left: 0.5rem;">の記事</span>
+        <span style="margin-left: 0.5rem;" data-i18n="articles.suffix">の記事</span>
     </h1>
-    <p class="page-subtitle">{{ articles|length }}件の記事</p>
+    <p class="page-subtitle">{{ articles|length }} <span data-i18n="count.suffix">件の記事</span></p>
 </div>
 
 <!-- ===== 記事一覧 ===== -->
@@ -67,7 +67,7 @@
     {% empty %}
         <div class="empty-state" id="empty-state-tag">
             <div class="empty-state-icon">∅</div>
-            <div class="empty-state-text">このタグの記事はまだありません</div>
+            <div class="empty-state-text" data-i18n="tag.empty">このタグの記事はまだありません</div>
         </div>
     {% endfor %}
 </div>
